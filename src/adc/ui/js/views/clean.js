@@ -867,5 +867,221 @@
       execute(plan);
     });
   }
-  /*__NEXT__*/
+
+  function execute(plan) {
+    var release = claim('clean');
+    if (!release) {
+      setPhase(restPhase());
+      return;
+    }
+    state.release = release;
+    setPhase(CLEANING);
+    dom.progress.set(0, i18n.t('clean.starting'));
+    api.cleanExecute(plan.token).then(function (data) {
+      state.job = { id: data.job_id, kind: 'clean' };
+      attach(data.job_id, 'clean');
+    }, function (err) {
+      if (err && STALE_PLAN[err.code] && !state.planRetried) {
+        state.planRetried = true;
+        if (state.release) { state.release(); state.release = null; }
+        reprice();
+        return;
+      }
+      finishJob();
+      setPhase(restPhase());
+      ui.showError(err);
+    });
+  }
+
+  function finishClean(snap) {
+    state.snap = snap;
+    setPhase(restPhase());
+    renderSummary();
+    if (snap.id) { fetchReport(snap.id, true); }
+    if (snap.state === 'cancelled') {
+      ui.toast(i18n.t('clean.cancelled'), { kind: 'warn' });
+      return;
+    }
+    if (snap.state === 'failed') {
+      ui.toast(snap.error || i18n.t('state.failed'), {
+        kind: 'error', detail: snap.error ? String(snap.error) : null
+      });
+      return;
+    }
+    ui.toast(i18n.t('state.done'), { kind: 'success' });
+  }
+
+  function fetchReport(jobId, retry) {
+    api.reportDetail(jobId).then(function (data) {
+      if (state.snap && state.snap.id === jobId) {
+        state.report = (data && data.report) || null;
+        renderSummary();
+      }
+    }, function () {
+      if (retry) {
+        window.setTimeout(function () {
+          fetchReport(jobId, false);
+        }, REPORT_RETRY_MS);
+      }
+    });
+  }
+
+  function renderSummary() {
+    ui.clear(dom.summary);
+    var snap = state.snap;
+    if (!snap) {
+      dom.summary.hidden = true;
+      return;
+    }
+    dom.summary.hidden = false;
+
+    var dismissBtn = ui.btn({
+      icon: 'icon-close',
+      label: 'action.dismiss',
+      variant: 'ghost',
+      size: 'sm',
+      on: {
+        click: function () {
+          state.snap = null;
+          state.report = null;
+          setPhase(restPhase());
+          renderSummary();
+        }
+      }
+    });
+
+    var histBtn = ui.btn({
+      icon: 'icon-history',
+      i18n: 'nav.history',
+      variant: 'ghost',
+      size: 'sm',
+      on: {
+        click: function () { ADC.app.go('history'); }
+      }
+    });
+
+    var card = ui.card({
+      icon: 'icon-clean',
+      i18n: 'history.reclaimed',
+      actions: [histBtn, dismissBtn]
+    });
+
+    var stats = [
+      ui.stat({
+        i18n: 'history.reclaimed',
+        value: i18n.fmtBytes(snap.reclaimed_total)
+      })
+    ];
+
+    if (state.report && typeof state.report.free_delta_total === 'number') {
+      stats.push(ui.stat({
+        i18n: 'history.free_delta',
+        value: i18n.fmtBytes(state.report.free_delta_total, { signed: true }),
+        hint: i18n.t('history.free_delta.hint')
+      }));
+    }
+
+    var touched = snap.per_target ? Object.keys(snap.per_target).length : 0;
+    stats.push(ui.stat({
+      i18n: 'history.touched',
+      value: i18n.fmtInt(touched)
+    }));
+
+    ui.append(card.body, stats);
+    dom.summary.appendChild(card);
+  }
+
+  function loadCatalogue() {
+    if (state.catalogPending) { return; }
+    state.catalogPending = true;
+    var p = (ADC.app && typeof ADC.app.catalog === 'function') ? ADC.app.catalog() : api.catalog();
+    p.then(function (cat) {
+      state.catalogPending = false;
+      state.catalog = cat;
+      buildPresets();
+      rebuildCatalogue();
+      seedPreset();
+    }, function (err) {
+      state.catalogPending = false;
+      ui.showError(err);
+    });
+  }
+
+  function seedPreset() {
+    if (state.seeded) { return; }
+    var s = settings();
+    var name = (s && s.preset) ? s.preset : 'safe';
+    var presets = (state.catalog && state.catalog.presets) || {};
+    if (presets[name]) {
+      state.seeded = true;
+      applyPreset(name);
+    }
+  }
+
+  function mount(host) {
+    dom.root = host;
+    dom.summary = ui.el('div', { hidden: true });
+    dom.presets = ui.el('div', { role: 'toolbar' });
+    dom.cats = ui.el('div');
+    var footer = buildFooter();
+    dom.log = ui.consolePane();
+
+    host.appendChild(dom.summary);
+    host.appendChild(dom.presets);
+    host.appendChild(dom.cats);
+    host.appendChild(footer);
+    host.appendChild(dom.log);
+
+    setPhase(IDLE);
+    loadCatalogue();
+  }
+
+  function enter(host, actions) {
+    if (state.job && !state.watcher) {
+      attach(state.job.id, state.job.kind);
+    }
+    if (!state.catalog) {
+      loadCatalogue();
+    } else {
+      for (var i = 0; i < state.rows.length; i += 1) {
+        var e = state.rows[i];
+        e.enabled = isEnabled(e.row);
+        if (e.node && e.node.box) {
+          e.node.box.disabled = !e.enabled || working();
+          e.node.classList.toggle('trow--disabled', !e.enabled);
+        }
+      }
+      pruneSelection();
+      syncBoxes();
+      refreshSubtotals();
+      refreshFooter();
+      refreshGroupToggles();
+    }
+    setPhase(state.phase);
+  }
+
+  function leave() {
+    if (state.watcher) {
+      state.watcher.stopPolling();
+      state.watcher = null;
+    }
+  }
+
+  function relang() {
+    if (state.catalog) {
+      buildPresets();
+      rebuildCatalogue();
+    }
+    if (state.snap) {
+      renderSummary();
+    }
+    refreshFooter();
+  }
+
+  views.clean = {
+    mount: mount,
+    enter: enter,
+    leave: leave,
+    relang: relang
+  };
 })();
