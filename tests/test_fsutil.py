@@ -374,11 +374,14 @@ def test_scan_cache_hit_and_invalidation(tree: Path) -> None:
     assert second.cached is True
     assert second.size == first.size
 
+    mtime = os.stat(tree).st_mtime + 2.0
+    os.utime(tree, (mtime, mtime))
     write_file(tree / "b.bin", 1000)
     third = walk_size(tree, cancel=CancelToken(), cache=cache, size_on_disk=False)
 
     assert third.cached is False
     assert third.size == 2000
+
 
 
 def test_scan_cache_does_not_store_truncated(tree: Path,

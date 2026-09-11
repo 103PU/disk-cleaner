@@ -493,7 +493,10 @@ def test_a_stale_cache_entry_is_invalidated_by_a_changed_mtime(
     assert first.rows()[0]["cached"] is False
 
     # Touch the directory itself so its mtime_ns changes, then add a file.
+    mtime = os.stat(root).st_mtime + 2.0
+    os.utime(root, (mtime, mtime))
     write_file(root / "g.bin", 50)
+
 
     second = _run(("one",), settings=Settings(), cache=cache)
     row = second.rows()[0]
