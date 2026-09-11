@@ -1,0 +1,402 @@
+/*
+ * layout.css -- the application frame, and only the parts of it that exist once.
+ *
+ * Owns: the sidebar/content split, the nav rail, the topbar, the view slot, the
+ * language toggle, the loader spin, and the three things that sit on top of the
+ * whole window -- the dialog scrim, the toast stack, the fatal screen.
+ *
+ * Deliberately not here: anything a view could put on the page twice. The admin
+ * banner in the sidebar foot and the buttons a view drops into the topbar are
+ * components; this sheet gives them a place and a gap and nothing else. Also not
+ * here: any value of its own. Every colour, size, radius, shadow and duration is a
+ * var(--token), and there is no @import, @font-face or url() anywhere -- with
+ * style-src 'self' and font-src 'none' a self-contained sheet is the only kind that
+ * loads at all (index.html's head comment has the measurement).
+ *
+ * The stacking order, all of it, so the next person does not have to reassemble it
+ * from three sheets:
+ *
+ *     0    the shell -- sidebar, content, view: no z-index at all
+ *     20   .topbar, which is sticky and has the view scrolling under it
+ *     30   .overlay, the scrim under ui.confirm's dialog
+ *     40   .toast-host, above a dialog: a toast reports what a dialog started
+ *     50   .fatal, above everything, because nothing recovers from it
+ *
+ * 1-19 is left free on purpose, for a sticky table header inside a view.
+ */
+
+/* --- shell -------------------------------------------------------------------- */
+
+/* body is already height:100% and overflow:hidden (tokens.css), so the frame is
+   exactly one window and only the pane inside it scrolls. minmax(0, 1fr) rather than
+   1fr: a wide table in a view must not be able to widen the column and push the
+   sidebar off the screen. */
+.app {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  height: 100%;
+}
+
+/* An opaque surface rather than --panel-bg: tokens.css measured every text colour in
+   here against an opaque ground, and a translucent rail would make those numbers
+   untrue. It scrolls itself so that at the 1040x700 minimum window (docs/02-SPEC.md
+   7.1) the language toggle is still reachable. */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-3);
+  background: var(--surface-1);
+  border-right: 1px solid var(--panel-border);
+  overflow-y: auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-3);
+}
+
+/* The <svg> in index.html carries no width or height attribute, so without a box
+   from here it falls back to the SVG default of 300x150. Every icon in this sheet
+   states its own box for that reason. */
+.brand__mark {
+  width: var(--sp-6);
+  height: var(--sp-6);
+  color: var(--primary-text);
+}
+
+/* "Antigravity <b>Disk Cleaner</b>": the product half carries the weight and the
+   vendor half steps back with a measured colour, never with opacity. */
+.brand__name {
+  color: var(--text-muted);
+  font-size: var(--fs-md);
+}
+
+.brand__name b {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+/* --- nav rail ----------------------------------------------------------------- */
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+/* Full width and var(--tap) tall, so the hit target is the whole row rather than the
+   label inside it (docs/02-SPEC.md 7.4). position:relative anchors the active rail. */
+.nav__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  color: var(--text-muted);
+  font-size: var(--fs-md);
+  text-align: left;
+  transition: background-color var(--dur-fast) var(--ease),
+              color var(--dur-fast) var(--ease);
+}
+
+/* No colour of its own: the icon rides the row's currentColor, so one hover rule
+   moves the label and the glyph together. */
+.nav__icon {
+  width: var(--sp-5);
+  height: var(--sp-5);
+}
+
+.nav__item:hover {
+  background: var(--surface-2);
+  color: var(--text-main);
+}
+
+/* Hover recolours, press moves. SPEC 7.4 wants the two distinguishable by more than
+   colour, and a pixel of travel is what a press feels like. */
+.nav__item:active {
+  background: var(--surface-3);
+  transform: translateY(1px);
+}
+
+/* The current view, marked at app.js:191. Three channels agree and none of them is
+   load-bearing alone: the label gains weight, the row gains a surface, and the rail
+   below is a shape. Declared after :hover on purpose -- clicking the current item
+   returns immediately (app.js:223), so it should not offer a hover affordance. */
+.nav__item.is-active {
+  background: var(--surface-3);
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.nav__item.is-active::before {
+  content: "";
+  position: absolute;
+  top: var(--sp-2);
+  bottom: var(--sp-2);
+  left: 0;
+  width: var(--sp-1);
+  border-radius: var(--r-pill);
+  background: var(--primary-text);
+}
+
+.nav__item.is-active .nav__icon {
+  color: var(--primary-text);
+}
+
+/* --- sidebar foot ------------------------------------------------------------- */
+
+/* margin-top:auto is the whole reason this element exists: it holds the admin banner
+   and the language toggle at the bottom of the rail however many nav items there are. */
+.sidebar__foot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-top: auto;
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--hairline);
+}
+
+/* A segmented pair rather than two loose buttons: the frame is what says VI and EN
+   are one control with one answer. */
+.lang {
+  display: flex;
+  gap: var(--sp-1);
+  padding: var(--sp-1);
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+}
+
+/* The language you are not using is --text-muted (7.82:1), never a dimmed
+   --text-main: it still has to be readable enough to aim at. The transparent border
+   is here so gaining the active one below moves nothing. No box-shadow on any state
+   of this button -- it would outrank the :focus-visible ring in tokens.css and the
+   keyboard route through the toggle would go invisible. */
+.lang__btn {
+  flex: 1;
+  min-height: var(--tap);
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  transition: background-color var(--dur-fast) var(--ease),
+              color var(--dur-fast) var(--ease);
+}
+
+.lang__btn:hover {
+  background: var(--surface-3);
+  color: var(--text-main);
+}
+
+.lang__btn:active {
+  transform: translateY(1px);
+}
+
+/* Chosen, marked at app.js:310 alongside aria-pressed. The difference from the other
+   half is figure-ground -- one segment is filled and framed, the other is bare -- so
+   it survives being read in one colour. */
+.lang__btn.is-active {
+  background: var(--primary-deep);
+  border-color: var(--primary-text);
+  color: var(--text-main);
+}
+
+/* --- content pane ------------------------------------------------------------- */
+
+/* The only scrollport in the window. The sidebar is a sibling so it cannot move; the
+   topbar is a child and stays by being sticky, which keeps the view title and its
+   actions on screen through five thousand lines of log. The --content-max measure is
+   carried by the two children rather than by a track here, because auto margins on
+   them are what centres it. */
+.content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+/* Centred on the same measure as the view below it, so a title and the numbers it
+   labels stay in one column on a 32-inch monitor. The width is stated because auto
+   inline margins switch stretch off, and --content-max then clamps it. Opaque
+   background: the view scrolls underneath this, and --panel-bg would show it. */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding: var(--sp-5) var(--sp-6) var(--sp-4);
+  background: var(--bg-color);
+  border-bottom: 1px solid var(--panel-border);
+}
+
+/* min-width:0 is what lets a long Vietnamese subtitle wrap instead of pushing the
+   action buttons out of the header. */
+.topbar__left {
+  min-width: 0;
+}
+
+.topbar__title {
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.topbar__sub {
+  margin-top: var(--sp-1);
+  color: var(--text-muted);
+  font-size: var(--fs-md);
+}
+
+/* Each view appends its own buttons here and app.js:237 clears them on every switch,
+   so the count is never known from here. No flex-shrink override for that reason: the
+   row has to be squeezable before wrap can save it from overflowing the header. */
+.topbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+}
+
+/* One <section> is visible at a time and the other six carry [hidden], which
+   tokens.css:154 turns into display:none !important. app.js:235 and app.js:244 flip
+   nothing but that attribute, so this rule states no display for them to fight.
+   flex:1 gives a short view the full pane height, so an empty state has somewhere to
+   centre itself. */
+.view {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding: var(--sp-6) var(--sp-6) var(--sp-10);
+}
+
+/* --- loader ------------------------------------------------------------------- */
+
+/* The one animation the frame owns; ui.js:509 hands this class to the refresh icon in
+   a log header. tokens.css already flattens every animation under
+   prefers-reduced-motion, so there is no second media query here. The period is
+   derived from --dur rather than invented: --dur is a 200ms transition, and a loader
+   turning five times a second reads as broken rather than busy. */
+@keyframes adc-spin {
+  to { transform: rotate(1turn); }
+}
+
+.spin {
+  width: var(--sp-4);
+  height: var(--sp-4);
+  color: var(--primary-text);
+  animation: adc-spin calc(var(--dur) * 5) linear infinite;
+}
+
+/* --- on top of everything ----------------------------------------------------- */
+
+/* Bottom right, where Windows puts its own notifications. Pinned on the left edge as
+   well so a long engine sentence wraps inside the window instead of running past it.
+   The stack is transparent to the mouse: it covers the bottom of every view, and
+   without this it would swallow the clicks in that strip whenever it is empty.
+   ui.js:546 appends into this element by id. */
+.toast-host {
+  position: fixed;
+  z-index: 40;
+  right: var(--sp-6);
+  bottom: var(--sp-6);
+  left: var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--sp-2);
+  pointer-events: none;
+}
+
+/* Handing the clicks back to the toasts themselves, which is the half of the
+   pointer-events pair the host cannot do without: one of them carries a dismiss
+   button. Stated here rather than left to components.css, because the rule that
+   turned them off is here. */
+.toast-host > * {
+  pointer-events: auto;
+}
+
+/* The scrim under ui.confirm's dialog (ui.js:728). --overlay is heavy enough to take
+   the view out of play and thin enough that the figure the dialog is quoting is still
+   visible behind it. It scrolls, so a tall dialog is still reachable at the 700px
+   minimum window height. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-6);
+  overflow-y: auto;
+  background: var(--overlay);
+}
+
+/* The bridge-is-gone screen (ui.js:744). It is the one panel that has to be readable
+   when nothing else in the app worked, so it depends on no component and on no
+   layout above it: an opaque page, a box, and four elements inside it. Opaque rather
+   than the scrim, because there is nothing behind it worth seeing. */
+.fatal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-6);
+  background: var(--bg-color);
+}
+
+/* There is no dialog-width token, and a measure guessed in pixels would be the one
+   number in this file nobody could trace back to anything: two sidebars wide is
+   derived from one that exists. */
+.fatal__box {
+  max-width: calc(var(--sidebar-w) * 2);
+  padding: var(--sp-8);
+  background: var(--surface-1);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-pop);
+  text-align: center;
+}
+
+/* svg is display:block in the reset, so auto margins are what centre it. */
+.fatal__icon {
+  width: var(--sp-8);
+  height: var(--sp-8);
+  margin: 0 auto var(--sp-4);
+  color: var(--danger-text);
+}
+
+.fatal__box h2 {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+}
+
+.fatal__body {
+  margin-top: var(--sp-3);
+  color: var(--text-muted);
+  font-size: var(--fs-md);
+}
+
+/* ui.js:747 writes the engine's own words in here and leaves it empty when there are
+   none, so this rule must not reserve height for a line that may not come. */
+.fatal__detail {
+  margin-top: var(--sp-4);
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+}
+

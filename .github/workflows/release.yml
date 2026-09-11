@@ -1,0 +1,66 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build & Release (Windows x64)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          enable-cache: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.13"
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run quality gate tests
+        run: uv run pytest -q --tb=short
+
+      - name: Build standalone bundle and installer
+        run: pwsh -File build.ps1 -SkipTests
+
+      - name: Package portable ZIP and update checksums
+        shell: pwsh
+        run: |
+          $Tag = $env:GITHUB_REF_NAME
+          $ZipName = "DiskCleanUp-$Tag-windows-x64-portable.zip"
+          Compress-Archive -Path "dist/DiskCleanUp" -DestinationPath "dist/$ZipName" -Force
+          
+          # Regenerate SHA256SUMS.txt with all release binaries
+          $Files = Get-ChildItem -Path "dist" -Include "*.exe", "*.zip" -Recurse | Where-Object { $_.FullName -notmatch "build" -and $_.DirectoryName -eq (Resolve-Path "dist").Path }
+          $Hashes = foreach ($f in $Files) {
+            $h = (Get-FileHash -Path $f.FullName -Algorithm SHA256).Hash
+            "$h  $($f.Name)"
+          }
+          $Hashes | Set-Content -Path "dist/SHA256SUMS.txt" -Encoding utf8
+          Get-Content "dist/SHA256SUMS.txt"
+
+      - name: Create GitHub Release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.exe
+            dist/*.zip
+            dist/SHA256SUMS.txt
+          generate_release_notes: true

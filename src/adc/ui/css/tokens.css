@@ -1,0 +1,194 @@
+/*
+ * tokens.css -- the design system, and nothing that lays anything out.
+ *
+ * The palette is v1's, unchanged (src/cleaner_ui.html:12-24). It was not worth
+ * redesigning: the contrast numbers below were computed against --bg-color and all of
+ * them clear WCAG AA for normal text. One addition and one prohibition:
+ *
+ *   --primary-text  #a78bfa is here because --primary #8b5cf6 measures 4.69:1 -- past
+ *                   the 4.5:1 line, but too close to it to use for small text and
+ *                   still be able to say the check passes. #a78bfa measures 7.29:1.
+ *   opacity         is never used to dim TEXT anywhere in this UI. A colour token can
+ *                   be measured; `opacity: .6` over a translucent panel composites
+ *                   against whatever is behind it and cannot. --text-muted (7.82:1)
+ *                   or --text-dim exist for that instead. See docs/03-PLAN.md's P4
+ *                   contrast acceptance row.
+ *
+ * Measured against #0b0813, WCAG 2.1 relative luminance: --text-main 18.03:1,
+ * --text-muted 7.82:1, --text-dim 5.33:1, --primary-text 7.29:1, --secondary 8.17:1,
+ * --success 7.82:1, --warning 9.24:1, --danger-text 10.45:1, --danger 5.27:1,
+ * --primary 4.69:1 (large text and fills only).
+ *
+ * These are not hand-copied any more: tests/test_ui_assets.py recomputes every one of
+ * them from this file and fails if a token drops under its threshold, so editing a
+ * colour here cannot quietly break the contrast acceptance row.
+ *
+ * No @font-face, and there cannot be one: the CSP says font-src 'none'. See
+ * docs/02-SPEC.md 7.2 for why bundling Outfit was the wrong answer for Vietnamese.
+ */
+
+:root {
+  /* v1 palette, preserved verbatim. */
+  --bg-color: #0b0813;
+  --panel-bg: rgba(20, 16, 36, 0.6);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --primary: #8b5cf6;
+  --primary-glow: rgba(139, 92, 246, 0.4);
+  --secondary: #06b6d4;
+  --secondary-glow: rgba(6, 182, 212, 0.4);
+  --text-main: #f3f4f6;
+  --text-muted: #9ca3af;
+  --danger: #ef4444;
+  --success: #10b981;
+  --success-glow: rgba(16, 185, 129, 0.3);
+  --warning: #f59e0b;
+
+  /* Added in v2. */
+  --primary-text: #a78bfa;      /* small text on the dark ground */
+  --primary-deep: #6d28d9;      /* pressed / active fills */
+  --text-dim: #7c8595;          /* the dimmest text allowed, still 5.42:1 */
+  --danger-text: #fca5a5;       /* 9.1:1, for danger text on dark */
+  --danger-deep: #b91c1c;
+  --surface-1: #120e1e;         /* opaque panel, for anything that must not composite */
+  --surface-2: #191428;
+  --surface-3: #221b35;
+  --hairline: rgba(255, 255, 255, 0.06);
+  --overlay: rgba(6, 4, 12, 0.72);
+}
+:root {
+  /* Type. Segoe UI Variable Text is what v1 has always actually rendered in --
+     Outfit was never installed on this machine, so the CDN @import cost a request
+     and then fell through to exactly this stack. */
+  --font-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-mono: Consolas, "Cascadia Mono", "Courier New", monospace;
+
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.8125rem;
+  --fs-md: 0.875rem;
+  --fs-base: 0.9375rem;
+  --fs-lg: 1.0625rem;
+  --fs-xl: 1.375rem;
+  --fs-2xl: 1.875rem;
+  --fs-num: 2.25rem;            /* the one big number on a card */
+
+  /* A 4px scale. Named by step, not by intent, because a gap is a gap. */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.25rem;
+  --sp-6: 1.5rem;
+  --sp-8: 2rem;
+  --sp-10: 2.5rem;
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-pill: 999px;
+
+  --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.28);
+  --shadow-pop: 0 12px 40px rgba(0, 0, 0, 0.55);
+  --ring: 0 0 0 2px var(--bg-color), 0 0 0 4px var(--primary-text);
+
+  --sidebar-w: 15.5rem;
+  --content-max: 78rem;
+  --tap: 2.25rem;               /* smallest interactive box */
+
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --ease: cubic-bezier(0.2, 0.6, 0.25, 1);
+
+  /* Risk tiers. Paired with an icon and a text label everywhere (SPEC 7.3) -- these
+     are the third channel, never the only one. */
+  --risk-safe: var(--success);
+  --risk-rebuildable: var(--secondary);
+  --risk-caution: var(--warning);
+  --risk-dangerous: var(--danger);
+}
+/* --- reset ------------------------------------------------------------------ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg-color);
+  color: var(--text-main);
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: 1.5;
+  /* The window is a fixed desktop frame; the page itself must not scroll or the
+     sidebar would leave with it. Panes scroll individually. */
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, p, ul, ol, dl, dd, figure { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button { background: none; border: 0; cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+
+/* Every number in this app is compared against another number one row above it, so
+   digits must not change width. */
+.num, .mono, code, kbd, samp, pre {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+svg { display: block; flex: none; }
+
+/* The sprite is markup, not content. */
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* Set with el.hidden throughout the JS, so it has to beat any display rule a
+   component sets on the same element. */
+[hidden] { display: none !important; }
+/* --- focus ------------------------------------------------------------------- */
+
+/* :focus-visible, not :focus -- a mouse click on a button should not leave a ring
+   behind, but every keyboard route through the UI must be visible (SPEC 7.4). The
+   double ring works on any background because the inner one is the page colour. */
+:focus { outline: none; }
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-radius: var(--r-sm);
+}
+
+/* Scrollbars. Thin, and visible enough to find -- v1's were nearly invisible. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+}
+
+::selection { background: var(--primary-deep); color: #fff; }
+
+/* --- motion ------------------------------------------------------------------ */
+
+/* SPEC 7.4: prefers-reduced-motion turns the pulse animations off. Kept as one rule
+   rather than sprinkled per-component, so a new animation is covered by default. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* A high-contrast Windows theme replaces the palette wholesale; keep the structure
+   legible rather than fighting it. */
+@media (forced-colors: active) {
+  .card, .btn { border: 1px solid CanvasText; }
+  :focus-visible { outline: 2px solid Highlight; box-shadow: none; }
+}

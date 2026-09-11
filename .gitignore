@@ -1,0 +1,42 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Virtualenvs (uv venv --python 3.12 -> .venv) ---
+.venv/
+.venv*/
+venv/
+
+# --- Build output (PyInstaller / Inno Setup) ---
+build/temp/
+build/adc/
+dist/
+installer/Output/
+*.spec.bak
+
+# --- Throwaway spikes ---
+_spike*/
+_spike*
+
+# --- Runtime state written by the app itself ---
+# Settings + run reports live under %LOCALAPPDATA%\AntigravityDiskCleaner,
+# but keep local copies out of the repo just in case.
+*.log
+reports/
+
+# --- Editor / OS noise ---
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+*.lnk
+
+
+# --- Agent scratch (audit passes, extraction manifests) ---
+.tmp-*

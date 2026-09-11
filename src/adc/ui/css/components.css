@@ -1,0 +1,652 @@
+/*
+ * components.css -- the reusable half of the UI: every piece js/ui.js builds.
+ *
+ * Buttons, cards, stat tiles, risk badges, target rows, progress and disk bars,
+ * filter chips, the log pane, toasts, the confirm dialog, empty and coming-soon
+ * panels, form fields, tags, size readouts and the admin banner. One block per
+ * component, in the order a view meets them.
+ *
+ * Deliberately NOT here:
+ *
+ *   the reset, :focus-visible, scrollbars, ::selection, the reduced-motion block and
+ *     the forced-colors block -- tokens.css owns all six. So no rule below sets an
+ *     outline or a box-shadow on focus, and none re-states a motion override;
+ *   any literal colour, spacing step, radius, shadow or duration -- var(--token)
+ *     only, because tests/test_ui_assets.py recomputes tokens.css from source and can
+ *     only vouch for what it can see. currentColor and transparent are not colours in
+ *     that sense and are used freely;
+ *   the shell -- .app, .sidebar, .topbar, .view, .overlay, .toast-host are layout.css's;
+ *   the four large views -- views.css, which loads after this file (index.html:45-48)
+ *     and therefore wins at equal specificity. That is the override mechanism: there
+ *     is no !important in here and none is needed.
+ *
+ * Three conventions that repeat, stated once instead of per rule:
+ *
+ *   Icons are sized off the TYPE scale, var(--fs-*), never off a scale of their own,
+ *   so an icon and the text beside it move together. ui.js:126 gives every icon
+ *   `class="ico <block>__ico"` and `ico` is styled by no sheet at all, so each block
+ *   sizes its own -- which is why the same two declarations recur.
+ *
+ *   A risk tier is never colour alone (docs/02-SPEC.md 7.3). ui.js already supplies
+ *   the icon shape and the word; the tiers below add a third channel out of border
+ *   WIDTH and STYLE -- solid, dashed, heavy, filled -- because width and style survive
+ *   both a greyscale reader and a forced-colors repaint, where a colour or a fill
+ *   does not.
+ *
+ *   Hover and :active differ by more than a colour (docs/02-SPEC.md 7.4): hover moves
+ *   the surface, the press moves the control one pixel down. Disabled states drop to
+ *   --text-dim (5.33:1), never to an opacity.
+ */
+/* --- button ------------------------------------------------------------------- */
+
+/* min-height, not height: ui.js:173 puts the label in a <span>, and the sidebar's
+   relaunch button is a block button in a 15.5rem column, so its Vietnamese label
+   wraps to three lines. A fixed height would clip it. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-4);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-main);
+  font-size: var(--fs-md);
+  font-weight: 500;
+  text-align: center;
+  transition: background-color var(--dur-fast) var(--ease),
+              border-color var(--dur-fast) var(--ease),
+              color var(--dur-fast) var(--ease),
+              transform var(--dur-fast) var(--ease);
+}
+.btn__ico { width: var(--fs-lg); height: var(--fs-lg); }
+
+.btn:hover { background: var(--surface-3); border-color: var(--text-dim); }
+.btn:active { transform: translateY(1px); background: var(--surface-2); }
+/* --primary is a FILL token, measured 4.69:1 on the page but only 3.69:1 under
+   --text-main, so the label on that fill is --bg-color (4.88:1) and the states move
+   the fill's LUMINANCE, not its hue: brighter on hover (7.28:1 dark-on-light), deep on
+   the press with a light label (6.37:1). Every state clears AA, which "just use
+   --primary" would not have. */
+.btn--primary { background: var(--primary); border-color: var(--primary); color: var(--bg-color); font-weight: 600; }
+.btn--primary:hover { background: var(--primary-text); border-color: var(--primary-text); }
+.btn--primary:active { background: var(--primary-deep); border-color: var(--primary-deep); color: var(--text-main); }
+
+.btn--ghost { background: transparent; border-color: var(--panel-border); }
+.btn--ghost:hover { background: var(--surface-2); border-color: var(--text-dim); }
+.btn--ghost:active { background: var(--surface-3); }
+
+/* Same luminance flip, same arithmetic: --danger under --text-main is 3.42:1, so the
+   resting fill is --danger-deep with a light label (5.88:1) and hover brightens to
+   --danger with a dark one (5.27:1). Red is never the text colour of a red button. */
+.btn--danger { background: var(--danger-deep); border-color: var(--danger); color: var(--text-main); font-weight: 600; }
+.btn--danger:hover { background: var(--danger); border-color: var(--danger); color: var(--bg-color); }
+.btn--danger:active { background: var(--danger-deep); color: var(--text-main); }
+
+/* No chrome at rest -- this is the toast's close button (ui.js:562) sitting on top of
+   another component. It still needs somewhere for the pointer to land, so hover grows
+   the surface it does not have. */
+.btn--bare { padding: var(--sp-1); background: transparent; border-color: transparent; color: var(--text-muted); }
+.btn--bare:hover { background: var(--surface-3); border-color: var(--hairline); color: var(--text-main); }
+
+/* The one size allowed under --tap, and only inside a dense row or a toolbar
+   (clean.js:222, ui.js:490) where a 36px control would set the row height. 1.75rem
+   with real padding still clears the 24px AAA target-size floor. */
+.btn--sm { min-height: calc(var(--tap) - var(--sp-2)); padding: var(--sp-1) var(--sp-3); gap: var(--sp-1); font-size: var(--fs-sm); }
+.btn--sm .btn__ico { width: var(--fs-md); height: var(--fs-md); }
+
+.btn--block { display: flex; width: 100%; }
+
+/* Square. ui.js:181 adds this exactly when there is no label, and the hit box must
+   never be smaller than the visible control, so the padding goes to zero and the
+   width matches the height instead of shrinking to the glyph. */
+.btn--icon { width: var(--tap); min-width: var(--tap); padding: 0; }
+.btn--sm.btn--icon { width: calc(var(--tap) - var(--sp-2)); min-width: calc(var(--tap) - var(--sp-2)); }
+
+/* Last in the block on purpose: at (0,2,0) this ties every variant's :hover and wins
+   by source order, so a disabled primary button cannot light up under the pointer.
+   Disabled is a legible flat statement -- --text-dim is 5.33:1 -- plus the
+   not-allowed cursor tokens.css:138 already sets. Nothing is dimmed. */
+.btn:disabled { background: var(--surface-1); border-color: var(--hairline); color: var(--text-dim); font-weight: 500; }
+.btn:disabled:active { transform: none; }
+/* --- card --------------------------------------------------------------------- */
+
+/* v1's translucent panel kept as-is: --panel-bg over --bg-color composites to within a
+   shade of --surface-1, which is the ground every text token in tokens.css was
+   measured against, so nothing inside a card needs its own contrast argument.
+
+   No overflow: hidden anywhere on this block. The focus ring (tokens.css:164) is an
+   outward box-shadow and a clipping ancestor would slice it off any control sitting at
+   the panel edge -- .card__actions is full of them. */
+.card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-panel);
+}
+.card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5);
+  border-bottom: 1px solid var(--hairline);
+}
+.card__ico { width: var(--fs-xl); height: var(--fs-xl); color: var(--primary-text); }
+.card__titles { flex: 1 1 auto; min-width: 0; }
+.card__title { font-size: var(--fs-lg); font-weight: 600; line-height: 1.3; }
+/* A volume label is free text off the disk (overview.js:168) -- it can be anything, so
+   it wraps instead of widening the panel. */
+.card__sub { margin-top: var(--sp-1); color: var(--text-muted); font-size: var(--fs-sm); overflow-wrap: anywhere; }
+.card__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin-left: auto; }
+/* One column and a gap: the vertical rhythm of every card in the app lives here, and a
+   view that wants columns re-declares grid-template-columns on its own wrapper rather
+   than fighting this rule. */
+.card__body { display: grid; gap: var(--sp-4); min-width: 0; padding: var(--sp-5); }
+/* --- stat tile ---------------------------------------------------------------- */
+
+/* A figure people read down a column, so nothing here may change a glyph's advance
+   width: the digits are tabular already (tokens.css:142, via the `num` class ui.js:219
+   always adds) and a tone moves the rail colour and the value colour only -- never the
+   size, never the weight. Four tiles in a row keep one height. */
+.stat {
+  display: grid;
+  gap: var(--sp-1);
+  min-width: 0;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  border-left: 3px solid var(--hairline);
+  border-radius: var(--r-md);
+}
+.stat__value { font-size: var(--fs-num); font-weight: 600; line-height: 1.15; }
+.stat__label { color: var(--text-muted); font-size: var(--fs-sm); }
+/* The small print that stops a number from lying: the ">=" note, "not measurable",
+   "Docker not running" (ui.js:216, backend size fields). --text-dim is the floor of the
+   palette at 5.33:1 -- quiet, not unreadable. */
+.stat__hint { color: var(--text-dim); font-size: var(--fs-xs); }
+
+/* Tones colour the VALUE, never the label: a tone is a claim about the number. Each is
+   a token the suite measured as text -- --secondary 8.17:1, --success 7.82:1,
+   --warning 9.24:1, --danger-text 10.45:1. --danger itself is a fill and appears below
+   only as a rail. */
+.stat--info { border-left-color: var(--secondary); }
+.stat--info .stat__value { color: var(--secondary); }
+.stat--success { border-left-color: var(--success); }
+.stat--success .stat__value { color: var(--success); }
+.stat--warn { border-left-color: var(--warning); }
+.stat--warn .stat__value { color: var(--warning); }
+.stat--danger { border-left-color: var(--danger); }
+.stat--danger .stat__value { color: var(--danger-text); }
+/* --- risk badge --------------------------------------------------------------- */
+
+/* Icon, then the word, then a colour -- ui.js:239-248 never emits one without the other
+   two. An inline pill, because it sits in a wrapping row of tags inside a target row. */
+.risk {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-2);
+  border: 1px solid currentColor;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.risk__ico { width: var(--fs-md); height: var(--fs-md); }
+/* The tier label is two words in Vietnamese ("Can can nhac"); it breaks between badges,
+   never inside one. */
+.risk__text { white-space: nowrap; }
+
+/* The third channel, on the border: thin solid, dashed, heavy, filled. The ranking
+   survives a greyscale print and a forced-colors theme, where a hue and a fill do not. */
+.risk--safe { color: var(--risk-safe); }
+.risk--rebuildable { color: var(--risk-rebuildable); border-style: dashed; }
+.risk--caution { color: var(--risk-caution); border-width: 2px; }
+.risk--dangerous { background: var(--danger-deep); border-color: var(--danger); color: var(--text-main); }
+/* The fold-to-unknown arm of ui.js:241 -- a tier the engine grew after this build
+   shipped. Dotted and grey says "unranked", which is the honest reading. */
+.risk--unknown { color: var(--text-muted); border-style: dotted; }
+
+/* Compact shrinks the badge, it never drops the word: one per row, 49 rows
+   (clean.js:209). */
+.risk--compact { padding: 0 var(--sp-1); font-size: var(--fs-xs); }
+.risk--compact .risk__ico { width: var(--fs-sm); height: var(--fs-sm); }
+
+/* --- size readout ------------------------------------------------------------- */
+
+/* Sizes are compared down a column, so the class carries no width of its own: ui.js:270
+   adds `num` for tabular digits and the right edge comes from the container
+   (.trow__right, .clean__figure). */
+.size { font-size: var(--fs-md); font-weight: 600; white-space: nowrap; }
+/* A lower bound already says ">=" in its text and carries the explanation in a title
+   (ui.js:275); the dotted underline is what says there is something to hover. */
+.size--lower-bound { text-decoration: underline dotted; }
+/* Not measurable, or nothing measured yet (ui.js:263). Quiet, in the UI font, and never
+   mistakable for a figure. */
+.size--none { color: var(--text-dim); font-weight: 500; }
+/* --- tag ---------------------------------------------------------------------- */
+
+/* "Can quyen Administrator", "Khong the hoan tac", "standalone", or a free-text
+   estimate note (clean.js:211-220). The word is always there, so a tone is a second
+   channel on top of language rather than the only one. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-2);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
+.tag__ico { width: var(--fs-xs); height: var(--fs-xs); }
+.tag--info { border-color: var(--secondary); color: var(--secondary); }
+.tag--success { border-color: var(--success); color: var(--success); }
+/* These two also take weight: warn is the gate ("needs Administrator") and danger is
+   the point of no return ("irreversible"). Weight reads with the colour removed. */
+.tag--warn { border-color: var(--warning); color: var(--warning); font-weight: 600; }
+.tag--danger { border-color: var(--danger); color: var(--danger-text); font-weight: 600; }
+/* --- target row --------------------------------------------------------------- */
+
+/*
+ * The densest thing in the app: up to 49 of these in one list, each a checkbox, a name,
+ * a description, a wrapping row of badges and tags, and a figure on the right
+ * (ui.js:309-346).
+ *
+ * The name WRAPS; it does not ellipsise. It is a real path off a real filesystem
+ * (ui.js:330) and it is the only thing on screen that says which folder is about to be
+ * deleted, so a tail lost to an ellipsis -- exactly where two Roaming caches differ --
+ * is the one failure this row cannot afford. Vietnamese descriptions run 30% longer
+ * than the English and would hit that limit first.
+ *
+ * align-items: start, so a three-line name does not drag the checkbox to the middle of
+ * the row; the 1fr column is minmax(0, 1fr) so a long unbreakable path shrinks it
+ * instead of widening the list.
+ */
+.trow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--sp-1) var(--sp-3);
+  min-height: var(--tap);
+  padding: var(--sp-3);
+  border-bottom: 1px solid var(--hairline);
+  border-left: 2px solid transparent;
+}
+/* The visible box and its hit box are the same 20px. The row's real target is the
+   label, which ui.js:330 wires to this input with for/id, so the whole name is
+   clickable and the checkbox never has to be. */
+.trow__box { width: var(--sp-5); height: var(--sp-5); margin-top: var(--sp-1); accent-color: var(--primary); cursor: pointer; }
+.trow__main { display: grid; gap: var(--sp-1); min-width: 0; }
+.trow__name { font-size: var(--fs-base); font-weight: 600; overflow-wrap: anywhere; cursor: pointer; }
+.trow__desc { color: var(--text-muted); font-size: var(--fs-sm); }
+.trow__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1) var(--sp-2); }
+/* Why the engine will skip this row (ui.js:334). Amber, not red: a missing permission is
+   a condition, not a failure. */
+.trow__why { color: var(--warning); font-size: var(--fs-xs); }
+/* What getting a rebuildable cache back will cost in time (ui.js:338). */
+.trow__note { color: var(--text-dim); font-size: var(--fs-xs); }
+/* Figures right-aligned so the column reads as a column, whatever the name did. */
+.trow__right { display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-2); text-align: right; }
+/* The row half of the third channel: the left rail's WIDTH and STYLE rank the tiers
+   2px solid -> 2px dashed -> 3px -> 4px, and only the dangerous tier also takes a fill.
+   Read this list in greyscale and the order is still there. */
+.trow--safe { border-left-color: var(--risk-safe); }
+.trow--rebuildable { border-left-color: var(--risk-rebuildable); border-left-style: dashed; }
+.trow--caution { border-left-color: var(--risk-caution); border-left-width: 3px; }
+.trow--dangerous { border-left-color: var(--danger); border-left-width: 4px; background: var(--surface-2); }
+
+/* After the tiers, so on a gated dangerous row the rail says "will be skipped" -- the
+   more actionable of the two facts, and the tier is still on the badge either way. The
+   name drops to --text-muted (7.82:1) and the rail goes dotted; the reason is spelled
+   out in .trow__why. Nothing here is faded, and no opacity is involved. */
+.trow--disabled { border-left-color: var(--text-dim); border-left-style: dotted; }
+.trow--disabled .trow__name { color: var(--text-muted); cursor: default; }
+.trow--disabled .trow__box { cursor: not-allowed; }
+
+/* Last in the block, so a hover still registers on a dangerous row that has a fill of
+   its own. */
+.trow:hover { background: var(--surface-3); }
+
+/* --- progress bar ------------------------------------------------------------- */
+
+/* ui.js:368 sets the fill width through the CSSOM in percent, so no rule here declares
+   a width on .bar__fill and no rule here may depend on one. overflow: hidden on the
+   track is what clips the fill to the pill radius; it is safe because nothing inside a
+   bar can take focus. */
+.progress { display: grid; gap: var(--sp-2); }
+.bar { height: var(--sp-2); border-radius: var(--r-pill); background: var(--surface-3); overflow: hidden; }
+.bar__fill { height: 100%; border-radius: var(--r-pill); background: var(--primary); transition: width var(--dur) var(--ease); }
+.bar__label { color: var(--text-muted); font-size: var(--fs-sm); }
+
+/*
+ * The engine reports pct 0 for a walk whose total it cannot know yet, and ui.js:367
+ * switches to this class with the fill pinned at 100%. Travelling stripes say "working"
+ * without claiming a position -- a bar frozen at 0 reads as hung. The stripes are
+ * generated, not fetched: the CSP allows no url() of any kind, and none is needed.
+ * The tile is --sp-8 wide and the animation shifts exactly one tile, so it loops
+ * seamlessly; under prefers-reduced-motion tokens.css:171 stops it on frame one, which
+ * still leaves a striped fill distinguishable from a determinate one.
+ */
+.bar--indeterminate .bar__fill {
+  background-image: repeating-linear-gradient(115deg, var(--primary-deep) 0 var(--sp-2), var(--primary) var(--sp-2) var(--sp-4));
+  background-size: var(--sp-8) 100%;
+  animation: adc-bar-travel calc(var(--dur) * 5) linear infinite;
+  transition: none;
+}
+@keyframes adc-bar-travel {
+  from { background-position: 0 0; }
+  to { background-position: var(--sp-8) 0; }
+}
+/* --- disk gauge --------------------------------------------------------------- */
+
+/*
+ * Only the fill is anybody's. overview.js:144 builds the track by concatenating
+ * `'gauge'` with a tier suffix into one string, which the class partition does not see,
+ * so `.gauge`, `.gauge--warn` and `.gauge--critical` belong to no sheet and no sheet may
+ * name them. This element therefore has to be the whole visible bar on its own: it lies
+ * directly on the card ground with its width set through the CSSOM in percent
+ * (overview.js:143), and min-width keeps a nearly-empty volume from rendering as
+ * nothing at all. Height and radius match .bar so a volume strip and a job bar read as
+ * the same object.
+ */
+.gauge__fill { min-width: var(--sp-1); height: var(--sp-2); border-radius: var(--r-pill); background: var(--primary); }
+
+/* --- filter chip -------------------------------------------------------------- */
+
+/* The log's five level filters (ui.js:470-479) are plain <button>s, not .btn, so they
+   carry their own chrome -- and a full --tap of height, because a toolbar gets no
+   dense-row exemption from docs/02-SPEC.md 7.4. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  transition: background-color var(--dur-fast) var(--ease),
+              color var(--dur-fast) var(--ease),
+              transform var(--dur-fast) var(--ease);
+}
+.chip:hover { background: var(--surface-2); color: var(--text-main); }
+.chip:active { transform: translateY(1px); }
+/* Pressed is a FILL, not a hue: aria-pressed carries the state for a screen reader
+   (ui.js:466) and the luminance jump carries it in greyscale, so it survives both. The
+   :hover pair below has to exist because .chip:hover at (0,2,0) would otherwise beat
+   this rule and un-press the chip under the pointer. */
+.chip--on { background: var(--primary-deep); border-color: var(--primary-text); color: var(--text-main); }
+.chip--on:hover { background: var(--primary); color: var(--bg-color); }
+/* --- log pane ----------------------------------------------------------------- */
+
+/*
+ * A monospace transcript, one line per event, capped at 5000 lines in the DOM
+ * (ui.js:384). It appears once, inside .hist__console (history.js:566).
+ *
+ * The pane is a flex column with min-height: 0 so the LIST takes the scroll and nothing
+ * else does: body cannot scroll (tokens.css:125), so an uncapped transcript would push
+ * the rest of the view out of the window rather than grow a scrollbar. max-height is
+ * that cap expressed in rows.
+ */
+.log {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--surface-1);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-md);
+}
+.log__head { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4); }
+.log__title { font-size: var(--fs-md); font-weight: 600; }
+/* The spinner slot is `hidden` between jobs (ui.js:509, 522) and [hidden] in
+   tokens.css:154 is the one !important in the UI, so it beats this display. */
+.log__spin { display: inline-flex; color: var(--primary-text); }
+.log__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-4) var(--sp-3);
+  border-bottom: 1px solid var(--hairline);
+}
+.log__filters { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
+.log__tools { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-left: auto; }
+.log__list {
+  flex: 1 1 auto;
+  min-height: calc(var(--tap) * 5);
+  max-height: calc(var(--tap) * 12);
+  overflow-y: auto;
+  padding: var(--sp-2) var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+/* Clock, level icon, message (ui.js:414-420). Fixed first two columns so 5000 messages
+   all start at the same x, and minmax(0, 1fr) so the message wraps inside its own column
+   instead of pushing the other two. */
+.log__line {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+  border-left: 2px solid transparent;
+  color: var(--text-muted);
+}
+.log__ts { color: var(--text-dim); }
+.log__ico { width: var(--fs-md); height: var(--fs-md); }
+/* An engine message can be a path, and a path has no spaces to break at. pre-wrap keeps
+   whatever alignment the backend put in the string. .log__text deliberately sets no
+   colour: a (0,1,0) rule here would outrank the level colour inherited from the line. */
+.log__text { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* The four levels, as colour on the LINE (the icons follow through currentColor) plus a
+   rail on the two that need finding in a 5000-line scroll. info is the bulk of any scan
+   and sits at --text-muted, 7.82:1 -- quiet enough that a warning stands out, still far
+   above AA. */
+.log__line--info { color: var(--text-muted); }
+.log__line--success { color: var(--success); }
+.log__line--warn { color: var(--warning); border-left-color: var(--warning); }
+.log__line--error { color: var(--danger-text); border-left-color: var(--danger); border-left-width: 3px; background: var(--surface-2); }
+/* --- toast -------------------------------------------------------------------- */
+
+/* Lands in the live region at index.html:274, which is outside .app, so it gets an
+   opaque surface and its own shadow: nothing behind a toast is knowable, which is why
+   this is --surface-2 and not the translucent --panel-bg. */
+.toast {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--sp-3);
+  max-width: calc(var(--content-max) / 3);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-2);
+  border: 1px solid var(--panel-border);
+  border-left: 3px solid var(--text-dim);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-pop);
+}
+.toast__ico { width: var(--fs-lg); height: var(--fs-lg); color: var(--text-muted); }
+.toast__body { display: grid; gap: var(--sp-1); min-width: 0; }
+.toast__text { overflow-wrap: anywhere; }
+/* An err.code or a raw JS message (ui.js:581-587): machine text, so it wraps anywhere
+   and stays in the mono face ui.js:558 asks for. */
+.toast__detail { color: var(--text-dim); font-size: var(--fs-xs); overflow-wrap: anywhere; }
+
+/* kind, from ui.js:549. The rail is the channel that survives greyscale; the icon shape
+   already differs (ui.js:550-552). error is the only one that widens the rail and takes
+   the rim as well, because an error toast stays twice as long and has to be findable
+   without reading. */
+.toast--info { border-left-color: var(--secondary); }
+.toast--info .toast__ico { color: var(--secondary); }
+.toast--success { border-left-color: var(--success); }
+.toast--success .toast__ico { color: var(--success); }
+.toast--warn { border-left-color: var(--warning); }
+.toast--warn .toast__ico { color: var(--warning); }
+.toast--error { border-color: var(--danger); border-left-width: 4px; }
+.toast--error .toast__ico { color: var(--danger-text); }
+/* --- confirm dialog ----------------------------------------------------------- */
+
+/*
+ * The panel only. The scrim and the centring belong to .overlay in layout.css, so
+ * nothing here positions this box; margin: auto is the single concession, so the panel
+ * still lands in the middle whether that overlay turns out to be flex, grid or block.
+ *
+ * Half the content measure: wide enough for the target list ui.js:719 puts inside it,
+ * narrow enough that the Vietnamese question above it stays one paragraph.
+ */
+.dialog {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: calc(var(--content-max) / 2);
+  max-height: 100%;
+  margin: auto;
+  background: var(--surface-2);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-pop);
+}
+.dialog__head { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-5) var(--sp-5) var(--sp-3); }
+.dialog__ico { width: var(--fs-xl); height: var(--fs-xl); color: var(--danger-text); }
+.dialog__title { font-size: var(--fs-xl); font-weight: 600; line-height: 1.25; }
+/* The BODY scrolls, not the dialog: the title and the two buttons must stay put when a
+   clean lists forty dangerous targets (clean.js:787). */
+.dialog__body { display: grid; gap: var(--sp-3); min-height: 0; overflow-y: auto; padding: 0 var(--sp-5); }
+.dialog__text { color: var(--text-muted); }
+/* What the user is actually approving (ui.js:718-722). Boxed, mono and tabular so the
+   sizes line up down the list; free text, so a long path wraps instead of escaping. */
+.dialog__lines { display: grid; gap: var(--sp-1); padding: var(--sp-3); background: var(--surface-1); border-radius: var(--r-sm); }
+.dialog__line { font-family: var(--font-mono); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.dialog__note { color: var(--warning); font-size: var(--fs-sm); }
+/* The typed-phrase gate (ui.js:759-765), docs/02-SPEC.md 4.3's DANGEROUS tier. Its own
+   block above the footer rather than a row beside the buttons: the box has to be read and
+   answered before the confirm button lights up, and something you type on the way past a
+   button reads like an option. */
+.dialog__ask { display: grid; gap: var(--sp-2); padding: var(--sp-3); background: var(--surface-1); border-radius: var(--r-sm); }
+/* The instruction carries the phrase itself, so it wraps like prose and is not dimmed:
+   this is the one line in the dialog the user has to act on. */
+.dialog__asklabel { font-size: var(--fs-sm); overflow-wrap: anywhere; }
+/* A box you type into sinks to the opaque --surface-1, the same as .settings__num and
+   .dx__filter -- except this one is already on --surface-1, so it takes the panel's own
+   --surface-2 to stay visible as a field. Mono, because what goes in it is a volume
+   letter and a colon, and full width so a two-character answer is unmissable. */
+.dialog__phrase {
+  width: 100%;
+  min-height: var(--tap);
+  padding: var(--sp-1) var(--sp-2);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+}
+.dialog__foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--sp-2); padding: var(--sp-5); }
+/* A dangerous confirm says so three ways: this rim, the icon, and the danger button in
+   the footer -- and ui.js:737 puts the initial focus on Cancel. */
+.dialog--danger { border-color: var(--danger); }
+/* --- empty state -------------------------------------------------------------- */
+
+/* A resting state, not a failure: no red, no border, no box. A centred column at half
+   the content measure, because half of these carry a sentence rather than a label. */
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-2);
+  max-width: calc(var(--content-max) / 2);
+  margin: 0 auto;
+  padding: var(--sp-8) var(--sp-5);
+  text-align: center;
+}
+.empty__ico { width: var(--fs-2xl); height: var(--fs-2xl); color: var(--text-dim); }
+.empty__title { font-size: var(--fs-lg); font-weight: 600; }
+.empty__body { color: var(--text-muted); }
+/* Free text: a path, a view name, or a sentence the backend localised itself
+   (ui.js:604). */
+.empty__detail { color: var(--text-dim); font-size: var(--fs-sm); overflow-wrap: anywhere; }
+.empty__action { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-2); margin-top: var(--sp-2); }
+
+/* --- coming soon -------------------------------------------------------------- */
+
+/* P5's honest placeholder (ui.js:619-635). The same calm as .empty, one degree more
+   deliberate: it is a statement about the roadmap, so it earns a panel and a brand
+   colour -- and it contains no disabled imitation of a control that does not exist. */
+.soon {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-3);
+  max-width: calc(var(--content-max) / 2);
+  margin: 0 auto;
+  padding: var(--sp-10) var(--sp-8);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-lg);
+  text-align: center;
+}
+.soon__ico { width: var(--fs-num); height: var(--fs-num); color: var(--primary-text); }
+.soon__title { font-size: var(--fs-xl); font-weight: 600; }
+/* The phase line is the fact the panel exists to state, so it is the one coloured
+   string in it. --primary-text, 7.29:1, because this is small text. */
+.soon__phase { color: var(--primary-text); font-size: var(--fs-sm); font-weight: 600; }
+.soon__body { color: var(--text-muted); }
+/* The bullets are the only left-aligned thing inside a centred panel: a list centred
+   line by line has no left edge to read down. */
+.soon__list { display: grid; gap: var(--sp-2); margin-top: var(--sp-2); text-align: start; }
+.soon__item { display: flex; align-items: baseline; gap: var(--sp-2); color: var(--text-muted); font-size: var(--fs-sm); }
+.soon__bullet { width: var(--fs-sm); height: var(--fs-sm); color: var(--primary-text); }
+/* --- form field --------------------------------------------------------------- */
+
+/*
+ * Label ABOVE the control, not beside it. A two-column form would have to invent a
+ * label-column width in this sheet, and the Settings labels are the longest strings in
+ * the app -- "Ngan sach thoi gian cho moi muc tieu (giay)" next to a number box is
+ * exactly where that column breaks. Stacked cannot break, and views.css still loads
+ * after this file if one specific field ever wants a row.
+ *
+ * .field__control stays a plain block on purpose: settings.js:66-126 puts a bare
+ * <input type="checkbox"> in here, and a grid or flex parent would stretch it into a
+ * wide box. So the control keeps its intrinsic size and the help text below it gets its
+ * separation from a margin instead of a gap.
+ */
+.field { display: grid; gap: var(--sp-1); min-width: 0; }
+.field__label { font-size: var(--fs-sm); font-weight: 600; }
+.field__control { min-width: 0; }
+/* "0 means no budget" -- read out with the control, because settings.js:68-73 points
+   aria-describedby at this paragraph. */
+.field__help { margin-top: var(--sp-1); color: var(--text-muted); font-size: var(--fs-xs); }
+
+/* --- admin banner ------------------------------------------------------------- */
+
+/*
+ * index.html:226-240, in .sidebar__foot -- a column about 13rem wide once the sidebar's
+ * padding is off, so everything in it wraps, including the relaunch button's label.
+ *
+ * Amber and a rail, not a red box: running without Administrator is a condition that
+ * costs the user some of the list, not an error. The count of what it costs is in
+ * .admin__note, and that number is the reason the banner is worth reading instead of
+ * dismissing.
+ */
+.admin {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  background: var(--surface-2);
+  border: 1px solid var(--panel-border);
+  border-left: 3px solid var(--warning);
+  border-radius: var(--r-md);
+}
+.admin__head { display: flex; align-items: flex-start; gap: var(--sp-2); color: var(--warning); font-size: var(--fs-sm); font-weight: 600; }
+.admin__icon { width: var(--fs-lg); height: var(--fs-lg); }
+.admin__note { color: var(--text-muted); font-size: var(--fs-xs); }
+/* The elevated session's receipt (index.html:235): same shape, green rail, no note and
+   no button. It states a fact and then gets out of the way. */
+.admin--ok { border-left-color: var(--success); }
+.admin--ok .admin__head { color: var(--success); }

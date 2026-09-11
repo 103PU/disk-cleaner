@@ -1,0 +1,135 @@
+[project]
+name = "antigravity-disk-cleaner"
+version = "2.0.0"
+description = "Disk CleanUp - Windows disk-space cleaner with a WebView2 desktop UI"
+
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = { text = "MIT" }
+authors = [{ name = "PU" }]
+
+# Runtime deps are pinned, not ranged: the v2 stack was spike-verified at these
+# exact versions on CPython 3.12.13 (docs/02-SPEC.md 3.3). pythonnet is what
+# constrains the interpreter - 3.14 is not supported by pythonnet 3.1.0.
+dependencies = [
+    "pywebview==5.4",
+    "pythonnet==3.1.0",
+]
+
+[project.optional-dependencies]
+build = ["pyinstaller==6.11.1"]
+
+[project.scripts]
+adc = "adc.__main__:main"
+
+[dependency-groups]
+dev = [
+    "pytest==8.3.4",
+    "pytest-timeout==2.3.1",
+    "ruff==0.8.6",
+    "mypy==1.14.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/adc"]
+
+# --------------------------------------------------------------------------
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"
+# No single engine test may hang: the walker has a budget and a cancel token,
+# so a timeout here is a real defect, not a slow machine.
+timeout = 60
+markers = [
+    "windows_only: needs real Win32 behaviour (junctions, sparse files, shell API)",
+    "slow: touches large real directories",
+]
+
+# --------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "B",        # bugbear
+    "UP",       # pyupgrade
+    "SIM",      # simplify
+    "RET",      # return
+    "PTH",      # prefer pathlib
+    "S",        # bandit
+    "TID",      # tidy imports
+    "RUF",
+]
+ignore = [
+    # The engine deliberately calls ctypes/Win32 and subprocess with argv lists.
+    # S603 fires on every subprocess.run even with shell=False; the real rule we
+    # care about (no shell=True) is S602/S604, which stay enabled.
+    "S603",
+    # os.path is used on purpose in the walker: os.scandir entries expose
+    # .path as str and pathlib adds a per-entry object allocation on a hot loop.
+    "PTH118", "PTH119", "PTH120", "PTH123", "PTH116",
+    # PTH100's suggested replacement is not equivalent and would be a defect
+    # here: os.path.abspath() normalises without touching the filesystem, while
+    # Path.resolve() also resolves symlinks and junctions. guard._norm() applies
+    # abspath and realpath as two deliberate steps, and platform_win passes
+    # un-resolved paths to Win32 on purpose.
+    "PTH100",
+    # The engine's path type is str throughout, deliberately: os.scandir hands
+    # back str, every Win32 call in platform_win.py expects str, and wrapping
+    # each check in a Path buys an allocation and nothing else.
+    "PTH110", "PTH111", "PTH112", "PTH117", "PTH207",
+    # Stronger than convenience: the delete primitives in strategies.py operate
+    # on long-path-prefixed strings, which must reach the API verbatim. pathlib
+    # normalises path components, which is exactly what that prefix exists to
+    # prevent, so os.remove/os.rmdir/os.chmod are the correct calls here.
+    "PTH101", "PTH106", "PTH107",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests assert on internals and use assert; that is their job.
+# S105/S106/S107: a plan token is a single-use dry-run receipt held in an
+# in-process dict, not a credential, and the cleaner and bridge tests have to
+# pass literal ones to prove the unknown/expired/spent branches apart. All three
+# rules stay on for src/, where a literal token would be a real finding.
+"tests/**" = ["S101", "S105", "S106", "S107", "S108", "PTH"]
+# TID251: window.py is the single module permitted to import pywebview -- that is
+# the whole reason it is a separate module from bridge.py. Exempting this one path
+# is what keeps the ban meaningful everywhere else, engine/ and bridge.py
+# included; tests/test_layering.py checks the bridge half independently.
+"src/adc/shell/window.py" = ["TID251"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"webview".msg = "only adc.shell.window may import pywebview (P1 layering rule)"
+
+# --------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.12"
+# The shell is included because the bridge is the type boundary: every argument
+# it takes came from JavaScript as ``object`` and every value it returns is
+# serialised into a web page.
+files = ["src/adc/engine", "src/adc/shell"]
+strict = true
+warn_unreachable = true
+# ctypes.windll only exists on Windows; mypy on any other host would flag it.
+platform = "win32"
+
+# pywebview ships ``py.typed``, so strict mode checks it -- including
+# ``no_implicit_reexport``, which rejects ``webview.http`` and
+# ``webview.initialize`` because its ``__all__`` omits them even though they are
+# its documented API. The relaxation is scoped to the library: our own modules
+# stay under the strict rule, and ``ignore_missing_imports`` covers the
+# platform backends it imports lazily.
+[[tool.mypy.overrides]]
+module = ["webview", "webview.*"]
+ignore_missing_imports = true
+implicit_reexport = true

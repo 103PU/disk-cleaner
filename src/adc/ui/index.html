@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<!--
+  P4 UI v2. Seven views (docs/02-SPEC.md 7.2), Vietnamese first, language switchable
+  live.
+
+  The CSP below is measured, not guessed. `'self'` does not mean over `file://` what
+  it means over `http`, so a throwaway probe ran in a real WebView2 148 window before
+  this file was written. What it established:
+
+    * script-src 'self'  -- an external <script src> RUNS; an inline <script> is BLOCKED
+    * style-src  'self'  -- an external <link> stylesheet APPLIES; an inline <style> is
+                            BLOCKED, even carrying !important
+    * img-src            -- an https:// image is blocked
+    * connect-src 'none' -- fetch() rejects with TypeError
+
+  Two consequences are load-bearing for the rest of P4:
+
+    1. Every rule of CSS lives in css/*.css. There is no <style> block in this file
+       and adding one would silently do nothing.
+    2. The i18n dictionaries are .js, not .json: with connect-src 'none' on a file://
+       origin there is no way to fetch() a JSON file, so js/locales/*.js assign into a
+       global registry. docs/03-PLAN.md named .json -- written before the measurement.
+
+  font-src 'none' is the other half of SEC-06, and a stronger promise than "the
+  bundled font is local": no font may load from anywhere. Nothing is bundled because
+  Outfit has no Vietnamese glyphs (docs/02-SPEC.md 7.2), so the system stack is not a
+  compromise -- it is the only stack that renders "ổ đĩa" in one typeface.
+
+  No directive names a network scheme, and the window is loaded from file:// so
+  pywebview never starts its Bottle server (src/adc/shell/window.py). Both halves of
+  that guarantee are tested.
+-->
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<title>Disk CleanUp</title>
+<!-- Cascade order is the specificity order, so it is load order and not !important
+     that resolves an override: tokens declares the variables, layout places the
+     shell, components styles the reusable pieces, views tunes the four large views
+     that compose them. A view rule and a component rule at equal specificity means
+     the view wins, which is the direction the overrides actually run. -->
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/views.css">
+</head>
+<body>
+<!--
+  Icon sprite. Inline SVG rather than files, because <use href="icons.svg#id"> is a
+  fetch under the hood and connect-src 'none' would kill it; and rather than an icon
+  font, because font-src 'none' means what it says.
+
+  Every risk tier gets a distinguishable SHAPE, not a colour (docs/02-SPEC.md 7.3):
+  circle-tick, arrow-loop, triangle, octagon. A colour-blind user reads the shape and
+  the text label; the colour is the third channel, never the only one.
+-->
+<svg class="sprite" aria-hidden="true" focusable="false" width="0" height="0">
+  <symbol id="icon-overview" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>
+  </symbol>
+  <symbol id="icon-clean" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="3 6 5 6 21 6"/>
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+    <line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+  </symbol>
+  <symbol id="icon-explorer" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+    <rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+  </symbol>
+  <symbol id="icon-projects" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+  </symbol>
+  <symbol id="icon-schedule" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/>
+  </symbol>
+  <symbol id="icon-history" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="3 4 3 10 9 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L3 10"/>
+    <polyline points="12 8 12 12 15 14"/>
+  </symbol>
+  <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/>
+    <path d="M1 14h6M9 8h6M17 16h6"/>
+  </symbol>
+  <symbol id="icon-safe" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+  </symbol>
+  <symbol id="icon-rebuildable" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+  </symbol>
+  <symbol id="icon-caution" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+  </symbol>
+  <symbol id="icon-dangerous" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7.86 2h8.28L22 7.86v8.28L16.14 22H7.86L2 16.14V7.86L7.86 2z"/>
+    <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+  </symbol>
+  <symbol id="icon-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+  </symbol>
+  <symbol id="icon-disk" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="22" y1="12" x2="2" y2="12"/>
+    <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+    <line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="10.01" y2="16"/>
+  </symbol>
+  <symbol id="icon-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+  </symbol>
+  <symbol id="icon-link" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+    <path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+  </symbol>
+  <symbol id="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+  </symbol>
+  <symbol id="icon-stop" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="5" y="5" width="14" height="14" rx="2"/>
+  </symbol>
+  <symbol id="icon-play" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <polygon points="6 4 20 12 6 20 6 4"/>
+  </symbol>
+  <symbol id="icon-log" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14 2 14 8 20 8"/>
+    <line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/>
+  </symbol>
+  <symbol id="icon-info" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="9"/>
+    <line x1="12" y1="16" x2="12" y2="11"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+  </symbol>
+  <symbol id="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 6 6 18M6 6l12 12"/>
+  </symbol>
+  <symbol id="icon-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="9 18 15 12 9 6"/>
+  </symbol>
+  <symbol id="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </symbol>
+  <symbol id="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+  </symbol>
+  <symbol id="icon-soon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.8 2.8M16.2 16.2 19 19M19 5l-2.8 2.8M7.8 16.2 5 19"/>
+    <circle cx="12" cy="12" r="3"/>
+  </symbol>
+  <symbol id="icon-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2.5 20 12l-8 9.5L4 12l8-9.5z"/><path d="M12 8.5 15.5 12 12 15.5 8.5 12 12 8.5z"/>
+  </symbol>
+</svg>
+<!--
+  The shell. Everything below the sidebar is empty on purpose: each view builds its
+  own subtree into its <section> the first time it is opened (js/views/*.js), so
+  starting the app costs one paint of the chrome and nothing else.
+
+  Navigation is seven ordinary <button>s, deliberately NOT role="tablist". A tablist
+  is the textbook ARIA pattern for this layout, and it makes Tab skip six of the seven
+  items -- correct by the spec, and the opposite of what docs/03-PLAN.md's acceptance
+  row asks for ("đi hết được UI bằng Tab"). Buttons in a list are each a tab stop,
+  which satisfies both the letter of that check and a keyboard user's expectation.
+
+  The Vietnamese text in this file is not a placeholder: it is what the window shows
+  in the ~5 ms before js/i18n.js runs, and it is the default language, so it must be
+  the real string rather than a key. data-i18n rewrites it when the language changes.
+-->
+<div class="app">
+  <nav class="sidebar" data-i18n-attr="aria-label:nav.label">
+    <div class="brand">
+      <svg class="brand__mark" aria-hidden="true"><use href="#icon-brand"/></svg>
+      <span class="brand__name"><b>Disk CleanUp</b></span>
+
+    </div>
+
+    <ul class="nav" role="list">
+      <li><button type="button" class="nav__item" data-view="overview">
+        <svg class="nav__icon" aria-hidden="true"><use href="#icon-overview"/></svg>
+        <span data-i18n="nav.overview">Tổng quan</span></button></li>
+      <li><button type="button" class="nav__item" data-view="clean">
+        <svg class="nav__icon" aria-hidden="true"><use href="#icon-clean"/></svg>
+        <span data-i18n="nav.clean">Dọn dẹp</span></button></li>
+      <li><button type="button" class="nav__item" data-view="explorer">
+        <svg class="nav__icon" aria-hidden="true"><use href="#icon-explorer"/></svg>
+        <span data-i18n="nav.explorer">Khám phá ổ</span></button></li>
+      <li><button type="button" class="nav__item" data-view="projects">
+        <svg class="nav__icon" aria-hidden="true"><use href="#icon-projects"/></svg>
+        <span data-i18n="nav.projects">Dự án</span></button></li>
+      <li><button type="button" class="nav__item" data-view="schedule">
+        <svg class="nav__icon" aria-hidden="true"><use href="#icon-schedule"/></svg>
+        <span data-i18n="nav.schedule">Lịch trình</span></button></li>
+      <li><button type="button" class="nav__item" data-view="history">
+        <svg class="nav__icon" aria-hidden="true"><use href="#icon-history"/></svg>
+        <span data-i18n="nav.history">Lịch sử</span></button></li>
+      <li><button type="button" class="nav__item" data-view="settings">
+        <svg class="nav__icon" aria-hidden="true"><use href="#icon-settings"/></svg>
+        <span data-i18n="nav.settings">Cài đặt</span></button></li>
+    </ul>
+    <div class="sidebar__foot">
+      <!-- Hidden until admin_state() answers, so an elevated session never sees it
+           flash. When it does show, it says how many rows are unavailable rather than
+           just "no admin" -- 16 of 49 is the number that makes the button worth
+           pressing. -->
+      <div class="admin" id="admin-banner" hidden>
+        <div class="admin__head">
+          <svg class="admin__icon" aria-hidden="true"><use href="#icon-shield"/></svg>
+          <span data-i18n="admin.missing">Chưa có quyền Administrator</span>
+        </div>
+        <p class="admin__note" id="admin-count"></p>
+        <button type="button" class="btn btn--ghost btn--block" id="admin-relaunch"
+                data-i18n="admin.relaunch">Khởi động lại với quyền Administrator</button>
+      </div>
+      <div class="admin admin--ok" id="admin-ok" hidden>
+        <div class="admin__head">
+          <svg class="admin__icon" aria-hidden="true"><use href="#icon-shield"/></svg>
+          <span data-i18n="admin.present">Đang chạy với quyền Administrator</span>
+        </div>
+      </div>
+
+      <div class="lang" data-i18n-attr="aria-label:lang.label">
+        <button type="button" class="lang__btn" data-lang="vi" lang="vi"
+                data-i18n-attr="title:lang.vi">VI</button>
+        <button type="button" class="lang__btn" data-lang="en" lang="en"
+                data-i18n-attr="title:lang.en">EN</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="content">
+    <header class="topbar">
+      <div class="topbar__left">
+        <h1 class="topbar__title" id="view-title" data-i18n="nav.overview">Tổng quan</h1>
+        <p class="topbar__sub" id="view-sub" data-i18n="nav.overview.sub">Tình trạng ổ đĩa và những gì có thể thu hồi</p>
+      </div>
+      <!-- Views drop their own action buttons here (Quét lại, Huỷ, …) instead of each
+           painting a header of its own. -->
+      <div class="topbar__actions" id="topbar-actions"></div>
+    </header>
+
+    <section class="view" id="view-overview" role="region" aria-labelledby="view-title" hidden></section>
+    <section class="view" id="view-clean" role="region" aria-labelledby="view-title" hidden></section>
+    <section class="view" id="view-explorer" role="region" aria-labelledby="view-title" hidden></section>
+    <section class="view" id="view-projects" role="region" aria-labelledby="view-title" hidden></section>
+    <section class="view" id="view-schedule" role="region" aria-labelledby="view-title" hidden></section>
+    <section class="view" id="view-history" role="region" aria-labelledby="view-title" hidden></section>
+    <section class="view" id="view-settings" role="region" aria-labelledby="view-title" hidden></section>
+    <!-- No sidebar entry for this one: it is reached from the Clean view's shadow-copy
+         row (app.js EXTRA). docs/02-SPEC.md 5 asks for a screen rather than a checkbox,
+         and a permanent nav item for the most destructive screen in the app would
+         advertise it. -->
+    <section class="view" id="view-vss" role="region" aria-labelledby="view-title" hidden></section>
+  </main>
+</div>
+<!-- Live region for transient messages. Outside .app so a toast is never clipped by a
+     scroll container, and role="status" so a screen reader hears it without the focus
+     moving (docs/02-SPEC.md 7.4). -->
+<div class="toast-host" id="toast-host" role="status" aria-live="polite" aria-atomic="false"></div>
+
+<!-- Boot dialog for a bridge that never arrives. Not a toast: if window.pywebview is
+     missing there is no app to go back to, so this one blocks. -->
+<div class="fatal" id="fatal" hidden>
+  <div class="fatal__box" role="alertdialog" aria-labelledby="fatal-title" aria-describedby="fatal-body">
+    <svg class="fatal__icon" aria-hidden="true"><use href="#icon-dangerous"/></svg>
+    <h2 id="fatal-title" data-i18n="fatal.title">Không kết nối được với engine</h2>
+    <p id="fatal-body" class="fatal__body" data-i18n="fatal.body">Cửa sổ đã mở nhưng cầu nối Python chưa sẵn sàng. Hãy đóng và mở lại ứng dụng.</p>
+    <p class="fatal__detail" id="fatal-detail"></p>
+  </div>
+</div>
+
+<!--
+  Load order is a dependency order, and it is the whole reason this is a list of
+  classic <script> tags rather than modules: on file:// WebView2 applies CORS to
+  module scripts, so `<script type="module">` fails where `<script src>` works. The
+  probe checked that too.
+
+    locales   -- populate ADC.locales before i18n reads them
+    i18n      -- ADC.i18n.t is called by every view's mount()
+    bridge    -- ADC.api; unwraps the {ok, data|error} envelope
+    ui        -- ADC.ui; shared DOM helpers, so seven views cannot invent seven
+                 different risk badges
+    views/*   -- each registers itself into ADC.views, none of them touch the DOM yet
+    app       -- last, and the only file with top-level side effects: it wires the
+                 sidebar, applies the saved language, and opens Overview
+-->
+<script src="js/locales/vi.js"></script>
+<script src="js/locales/en.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/bridge.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/views/overview.js"></script>
+<script src="js/views/clean.js"></script>
+<script src="js/views/explorer.js"></script>
+<script src="js/views/projects.js"></script>
+<script src="js/views/schedule.js"></script>
+<script src="js/views/history.js"></script>
+<script src="js/views/settings.js"></script>
+<script src="js/views/vss.js"></script>
+<script src="js/app.js"></script>
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,1659 @@
+/*
+ * views.css -- the four large views, arranged out of the pieces the other sheets provide.
+ *
+ * It loads last (index.html:45-48), and that is the only override mechanism used anywhere
+ * below: a rule here beats the components rule it shares specificity with because it comes
+ * later in the cascade. Nothing raises specificity to win an argument and nothing carries
+ * !important -- tokens.css owns the only two legitimate uses of that.
+ *
+ * What this sheet deliberately does NOT own:
+ *
+ *   Page chrome and page gutter. .content is the scroller and .view is the page box; both
+ *   are layout.css's. Every view root below arranges its own children and sets no page
+ *   padding, so the four views cannot disagree about the gutter.
+ *
+ *   The components. .card, .trow, .stat, .btn, .risk, .size and .log are components.css's,
+ *   including the risk tiers -- the tier colours belong with the badge that always carries
+ *   an icon and a word beside them (docs/02-SPEC.md 7.3). Where a rule below names a
+ *   component class it is scoping a decision only the view can make: how dense this list
+ *   is, how big this particular number is.
+ *
+ *   Values. Every colour, type size, space, radius, shadow and duration is a token.
+ *   Structural measurements no token describes -- a grid track, a 1px hairline, the width
+ *   below which a six-column table scrolls instead of being crushed -- are written plainly,
+ *   because a grid track is a layout fact and putting one in the design system would make
+ *   it look like a design decision.
+ *
+ * Nothing here dims with opacity. Dim text is --text-muted (7.82:1) or --text-dim (5.33:1),
+ * which are the two tokens measured for exactly that.
+ */
+
+/* --- Overview ----------------------------------------------------------------- */
+
+/* The landing view answers "how bad is it" in one screen, so its three blocks stack and
+   nothing inside them scrolls on a normal window. */
+.ov {
+  display: grid;
+  gap: var(--sp-6);
+  align-content: start;
+}
+
+/* The disks block is the only section here that is not a card: a heading over a grid of
+   cards reads as one group, and a card full of cards reads as a box in a box. */
+.ov__block {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.ov__block-title {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* --- Overview, continued: inside the three blocks ----------------------------- */
+
+/* One row of volume cards on any window this app runs in, and no breakpoint to keep in
+   sync: auto-fit drops a track as the pane narrows. 14rem is the width at which a volume
+   name, its bar and its free figure are all still readable, which puts four cards on one
+   row at the 1280x860 default and three at the 1040 minimum (docs/02-SPEC.md 7.1). The
+   error and the empty state are single children (overview.js:200-213) and auto-fit
+   collapses the tracks they leave empty, so a refusal gets the whole block to centre
+   itself in rather than the first 14rem of it. */
+.ov__disks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--sp-4);
+}
+
+/* The free figure beside the three numbers it is derived from, and above them once the
+   card is too narrow to hold both -- the card width here is a function of how many volumes
+   the machine has, so the arrangement follows it instead of a media query. start, because
+   a stretched grid distributes its spare height into the meta rows and pulls them apart. */
+.ov__disk-figs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--sp-3) var(--sp-4);
+  align-items: start;
+}
+
+/* --fs-num is spent once on this page, on the reclaimable total. Every ui.stat tile
+   arrives at that size (components.css:166), and five 36px numbers in one screen means
+   none of them is the answer. Only the size steps down: the rail, the tone and the tabular
+   digits are the tile's own, and they are what make four of them comparable. */
+.ov__disk-figs .stat__value,
+.ov__stats .stat__value {
+  font-size: var(--fs-xl);
+}
+
+/* Both are stacks of the same metaRow (overview.js:103-108) -- three under a gauge, two in
+   a run row -- so the row shape is stated once below and only the measure differs. */
+.ov__metas,
+.ov__run-figs {
+  display: grid;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
+/* A one-volume machine gets a card the full width of the pane, and a label sitting 30rem
+   from its figure has stopped being a pair with it. */
+.ov__metas {
+  max-width: 20rem;
+}
+
+/* label : figure. The figure is the last column and that column is auto, so it ends at the
+   row's right edge -- the three rows in a volume card and the two in a run row are read
+   down that edge, and tokens.css:142 is what keeps the digits from shifting under each
+   other. baseline, so a label that wraps does not take its figure down with it. */
+.ov__meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--sp-3);
+}
+
+.ov__meta-label {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+/* Never broken between the number and its unit: i18n.fmtBytes hands over "1,86 TB" as one
+   string and a wrap inside it reads as two values. */
+.ov__meta-value {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* The not-NTFS condition is a word beside an icon (overview.js:184-188) and both have to
+   stay visible (docs/02-SPEC.md 7.3), so the row wraps rather than clipping the label. */
+.ov__disk-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+/* Start and Stop in one row. Stop is `hidden` between runs (overview.js:558) and
+   tokens.css:154 beats any display a flex child gets, so nothing reserves its place. */
+.ov__scan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+/* The polite live region (overview.js:568): cleared when a run starts and filled once when
+   it settles, so it carries no border, no padding and no min-height -- there is nothing to
+   announce between runs and an empty box would announce itself. */
+.ov__results {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+/* The figure this whole view exists to produce, with its label above it and nothing beside
+   it. */
+.ov__headline {
+  display: grid;
+  gap: var(--sp-1);
+}
+
+.ov__headline-label {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+/* A flex line box rather than a block one: the figure is an inline span, and in a block it
+   would also carry the --fs-base strut and sit low in a gap of its own making. */
+.ov__headline-value {
+  display: flex;
+  align-items: baseline;
+}
+
+/* ui.size returns a span carrying its own --fs-md (components.css:224), so the one big
+   number on this page has to be scoped onto that span and not onto the wrapper above it. A
+   walk that hit its budget keeps the ">=" and its dotted underline at this size
+   (overview.js:392-398). */
+.ov__headline-value .size {
+  font-size: var(--fs-num);
+  line-height: 1.15;
+}
+
+/* Four counts that are read against each other, so they stay one row of equal columns down
+   to the 1040 minimum window and wrap only below it. */
+.ov__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: var(--sp-3);
+}
+
+/* Conditions, not failures: a quiet wrapping row in which every chip keeps its icon and its
+   word (overview.js:412-421, docs/02-SPEC.md 7.3). */
+.ov__flags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* A sentence, so it takes the whole line under the chips instead of being squeezed beside
+   one -- it is the only child of the flag row that is not a chip (overview.js:419-421). It
+   exists because the title ui.size hangs on the figure cannot be reached by keyboard, which
+   is also why it is --text-muted (7.82:1) rather than the --text-dim of ordinary fine
+   print. */
+.ov__note {
+  flex: 1 1 100%;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+/* The step the numbers above it are an argument for (overview.js:423-428), on its own line
+   at the end of them. */
+.ov__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+/* A slot and a list, and neither of them is a box: the card around them already has a
+   border, and a panel per row would read as three cards. The slot holds either the list or
+   an empty panel that centres itself in it (overview.js:474-495). */
+.ov__last,
+.ov__runs {
+  display: grid;
+}
+
+/* On the pair, so the last row needs no second rule to take a separator away again. */
+.ov__run + .ov__run {
+  border-top: 1px solid var(--hairline);
+}
+
+/* when | state | figures | open. Each row is its own grid, so what the three of them share
+   is the right edge: the figures are read down it, and the fixed square button below is
+   what puts it in the same place in every row. The timestamp is one tabular string of the
+   same length in each row (overview.js:455), so its column does not move either. */
+.ov__run {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-4);
+  min-height: var(--tap);
+  padding: var(--sp-2) 0;
+}
+
+/* overview.js:465 asks for the dense-row size, but this strip is three rows on a landing
+   view and not the 49-row list components.css:94 grants that exemption to, so the one
+   control in the row goes back to a full --tap square (docs/02-SPEC.md 7.4). */
+.ov__run .btn--sm.btn--icon {
+  width: var(--tap);
+  min-width: var(--tap);
+  min-height: var(--tap);
+}
+
+/* How you tell three rows apart, not what you read them for. nowrap, so a date and a clock
+   stay on one line. */
+.ov__run-when {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+
+/* State and kind, each an icon and a word (overview.js:436-451). It wraps rather than
+   clipping, because a clipped label leaves the tone as the only channel
+   (docs/02-SPEC.md 7.3). */
+.ov__run-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+/* --- Clean --------------------------------------------------------------------- */
+
+/*
+ * The view that deletes things, and the only one whose root is not a class of its own:
+ * clean.js builds straight into <section class="view"> (index.html:263), so .view is the
+ * page box and it declares no display (layout.css:280-286). Two consequences run through
+ * everything below.
+ *
+ * Nothing above can hand these pieces a gap. The element holding the category cards
+ * belongs to no sheet either -- clean.js:461 only ever toggles a modifier onto it -- so
+ * each top-level piece carries its own vertical rhythm in a margin. The margins in this
+ * section are the absence of a container, not a preference.
+ *
+ * And the two things that have to survive a squeezed window are the grand total and the
+ * risk mix. The total gets the size below; the mix stays where ui.js puts it, on every
+ * row at once -- which is why the list goes flush rather than gapped.
+ */
+
+/* The preset row (clean.js:472-492) lands in a container this sheet cannot name, and
+   ui.el appends without whitespace text nodes, so four inline-flex buttons would touch
+   and read as one segmented control instead of four choices: the toolbar's spacing has to
+   live on the buttons. The weight is pinned at the pressed value because refreshPresets
+   (clean.js:520) swaps btn--primary for btn--ghost on the same label and --primary is 100
+   heavier (components.css:73) -- letting that move would re-measure every label and
+   shuffle the toolbar under the pointer. The fill says which preset is the default; the
+   metrics stay still. */
+.clean__preset {
+  margin: 0 var(--sp-2) var(--sp-3) 0;
+  font-weight: 600;
+}
+
+/* --- the category list ---------------------------------------------------------- */
+
+/* One card per category, in the engine's own order (clean.js:306-328). Between the cards
+   only: a trailing margin would stack with the footer's own. */
+.clean__cat + .clean__cat {
+  margin-top: var(--sp-4);
+}
+
+/* Up to 49 rows spread across these cards (clean.js:209-216), so the body's --sp-4 gap and
+   --sp-5 padding come off: .trow already carries --sp-3 and a hairline of its own, and a
+   gap detaches every one of those hairlines from the row beneath it. Flush is also what
+   turns the tier rails into one unbroken column down the left edge -- the risk mix of a
+   whole category, read without reading a word (docs/02-SPEC.md 7.3). */
+.clean__cat .card__body {
+  gap: 0;
+  padding: 0;
+}
+
+/* .card carries no overflow: hidden on purpose (components.css:118-122 -- it would slice
+   the focus ring off the checkboxes), so the last row has to round its own corners: a
+   dangerous row's fill and any hover are full-width rectangles and they square off outside
+   the card's --r-lg without this. */
+.clean__cat .trow:last-child {
+  border-bottom: 0;
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
+}
+
+/* --- the per-category subtotal -------------------------------------------------- */
+
+/* Label and figure on one baseline in the card head. It stays hidden until the scan has
+   produced a number for this category (clean.js:436-437) -- a subtotal of nothing is not a
+   zero -- and [hidden] is the one !important in the UI (tokens.css:154), so declaring a
+   display here cannot un-hide it. */
+.clean__subtotal {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+}
+
+.clean__subtotal-label {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+/* A floor, not a width. These figures are a column read down the page, one per card head,
+   and each one sized to its own digits lines up with none of the others. 6rem holds
+   "≥ 999.9 GB" at --fs-md; anything longer simply pushes past the floor. */
+.clean__subtotal-value {
+  min-width: 6rem;
+  text-align: right;
+}
+
+/* The all/none toggle sits to the RIGHT of that figure in a margin-left:auto row
+   (components.css:145), so its width is what decides where the number lands -- and its
+   label flips between two words and two other words on every press (clean.js:422-426).
+   Three tap targets is enough for either label in either language; a translation longer
+   than that gets the jitter back. Full --tap tall rather than .btn--sm's dense-row height:
+   a card head is not a dense row, and this one control ticks an entire category
+   (docs/02-SPEC.md 7.4). */
+.clean__cat-toggle {
+  min-width: calc(var(--tap) * 3);
+  min-height: var(--tap);
+}
+
+/* --- the figure inside a row ---------------------------------------------------- */
+
+/* The right-hand cell of .trow is an `auto` grid track (components.css:271-275), so
+   anything in here that can grow wide takes that width out of the path column -- the one
+   thing the row cannot afford to lose (components.css:260-266). 12rem caps the figure as a
+   block, which is cheaper than capping the number and the note separately. */
+.clean__figure {
+  display: grid;
+  justify-items: end;
+  gap: var(--sp-1);
+  max-width: 12rem;
+}
+
+/* The same floor as a subtotal, for the same reason and one more: paintRow rewrites this
+   cell for every row on every poll (clean.js:260-275, four times a second for the length of
+   a walk), so without a floor the `auto` track re-measures as each figure arrives and 49
+   rows twitch until the scan ends. */
+.clean__size {
+  min-width: 6rem;
+}
+
+/* The engine's own words for why there is no number -- "path absent", "access denied", a
+   locked_by (clean.js:270-272). Free English prose of arbitrary length next to a
+   Vietnamese label, so it wraps inside the capped figure above, and `anywhere` because
+   half of what the engine returns is a path with nothing to break at. --text-muted, not
+   --text-dim: this line is the reason a figure is missing, so it has to be read rather
+   than merely noticed. It inherits its right alignment from .trow__right
+   (components.css:295). */
+.clean__rownote {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  overflow-wrap: anywhere;
+}
+
+/* One per row, 49 of them (clean.js:221-226). flex: none so a long "Mở thư mục" takes its
+   width from nowhere: the figure beside it is the column being read. */
+.clean__reveal {
+  flex: none;
+}
+/* The one row whose right-hand cell holds a way in rather than only a figure: vss_manage
+   opens the shadow-copy screen (clean.js buildRow). Same flex: none as the reveal button
+   beside it -- this one carries a word as well as an icon, so it is the wider of the two
+   and the one a squeeze would eat first. */
+.clean__open {
+  flex: none;
+}
+
+/* --- the list while a job runs -------------------------------------------------- */
+
+/*
+ * setLocked (clean.js:456-462) disables every box and puts this modifier on the list.
+ * Disabling alone is not enough: a control that still lights up under the pointer and
+ * still shows a pointer cursor is one the user clicks again, and on this screen the click
+ * they repeat is stop. So the affordances leave with the state -- the surface stops
+ * answering and the two cursors that promised something now say refused.
+ *
+ * The second rule is not a duplicate of the first. The dangerous tier's fill is one of its
+ * three channels (components.css:302), and pinning its hover to its resting fill is what
+ * stops the first rule from taking that channel away for the length of a run.
+ */
+.clean__cats--locked .trow:hover {
+  background: transparent;
+}
+
+.clean__cats--locked .trow--dangerous:hover {
+  background: var(--surface-2);
+}
+
+.clean__cats--locked .trow__name {
+  cursor: default;
+}
+
+.clean__cats--locked .trow__box {
+  cursor: not-allowed;
+}
+
+/* --- the action bar ------------------------------------------------------------- */
+
+/*
+ * STICKY, not fixed, and the DOM is what decides that: buildFooter (clean.js:563-567)
+ * returns an ordinary div into the view, and the scrollport is .content with the whole page
+ * inside it (layout.css:219-224). So bottom: 0 holds this bar against the pane while the
+ * list scrolls under it, and .view's flex: 1 1 auto (layout.css:280-286) is what also puts
+ * it at the bottom on a short list instead of halfway up. Fixed would have to re-derive
+ * --sidebar-w and --content-max here and would still land beneath .toast-host. The z-index
+ * is inside the 1-19 band layout.css:25 reserved for exactly this.
+ *
+ * The ground is opaque --surface-1: the rows scroll behind this bar, and --panel-bg would
+ * show them through the figure the user is about to approve. No shadow -- both shadow
+ * tokens fall downward, the one direction a bar pinned to the bottom cannot use -- so the
+ * rim and the opaque surface do the separating. The inline padding matches a card head's,
+ * so the count lines up with the titles above it.
+ */
+.clean__footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-3) var(--sp-4);
+  margin-top: var(--sp-5);
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--surface-1);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-lg);
+}
+
+/* Row one is the figures and the buttons, and the bar spans both columns underneath. The
+   rows are placed rather than flowed because the progress wrapper sits BETWEEN them in the
+   DOM (clean.js:563-567); it is absent between jobs (clean.js:546), and an absent grid item
+   leaves no track behind it. */
+.clean__status {
+  grid-row: 1;
+  grid-column: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-4);
+  min-width: 0;
+}
+/* The selected-row count, from i18n.tn so the sentence agrees with its own number
+   (clean.js:572). Muted and small on purpose: it qualifies the figure beside it, and only
+   one of the two is allowed to be the thing that cannot be missed -- at 7.82:1 "qualifies"
+   still does not mean "hard to read". Its width moves only when a box is ticked, never
+   during a job (the selection is frozen, clean.js:456-462), so the total to its right does
+   not drift while the walk reports. */
+.clean__count {
+  color: var(--text-muted);
+  font-size: var(--fs-md);
+}
+
+/* Deliberately the same shape as a category subtotal: these are the two figures the user
+   compares, and a comparison stops being one when its halves are built differently. The
+   baseline is shared with .clean__count too -- .clean__status aligns on it -- so the
+   sentence, the label and a 22px figure all sit on one line. */
+.clean__total {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+}
+
+.clean__total-label {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+/*
+ * The grand total: the figure that has to be read before a click nothing undoes. ui.size
+ * puts its own <span class="size num"> INSIDE this slot (ui.js:270-273) and .size pins
+ * --fs-md on that span (components.css:224), so the scale has to be declared on the span --
+ * the slot cannot hand it down.
+ *
+ * --fs-xl and not --fs-num: a 36px figure would set the height of a bar that is pinned over
+ * the list, and take room from the rows it exists to summarise. The selector catches
+ * .size--none as well, so the em-dash this slot starts life as (ui.js:267) is exactly as
+ * tall as the number that replaces it and the bar does not jump when the scan first reports.
+ */
+.clean__total-value .size {
+  font-size: var(--fs-xl);
+}
+
+/*
+ * Row two, across both columns. The wrapper sits BETWEEN the status and the actions in the
+ * DOM (clean.js:563-567) and carries `hidden` whenever nothing is running (clean.js:546),
+ * which is why all three children are placed explicitly: an absent grid item leaves no
+ * track behind it, while a bar left to flow would split the figures from the buttons for
+ * the length of every job.
+ *
+ * min-width: 0 because the line under the bar is the engine's own `detail` string
+ * (clean.js:657-658), which is usually a path; its min-content width would otherwise widen
+ * the 1fr column and push the buttons out of the bar.
+ */
+.clean__progress {
+  grid-row: 2;
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+/* The other half of that: a floor of zero stops the track from growing, it does not stop the
+   string from leaving the box. A path has nothing to break at, so it breaks anywhere. */
+.clean__progress .bar__label {
+  overflow-wrap: anywhere;
+}
+/* Row one, second column, hard against the right edge -- where a wrapped line still stacks
+   toward the same edge the eye is already resting on. It wraps rather than shrinks: at the
+   1040px minimum window (docs/02-SPEC.md 7.1) three buttons and a total do not share a
+   line, and a button that has wrapped onto its own line is still a whole target, where a
+   squeezed one is not. */
+.clean__actions {
+  grid-row: 1;
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+}
+
+/* Both start controls, in one rule because one decision covers them: .btn centres its label
+   and lets it wrap (components.css:42-44), and a two-line label makes this whole pinned bar
+   taller in the exact window that has least room for it. Holding the label on one line moves
+   that pressure up to the row above, where wrapping a whole button is the answer that leaves
+   every target intact. */
+.clean__scan,
+.clean__preview {
+  white-space: nowrap;
+}
+
+/*
+ * Unhidden only while a job is actually running (clean.js:585-586), which lands it at the
+ * right edge of the bar a moment after the button beside it was pressed -- so it takes a
+ * gutter wider than the row's own gap, and the second half of a double-click cannot arrive
+ * on it.
+ *
+ * Nothing here lengthens a transition. Cancel has to read as answered inside a second
+ * (docs/03-PLAN.md:196), and all of that feedback is the disabled repaint clean.js:688
+ * applies on the same tick, over the --dur-fast .btn already spends (components.css:59-62).
+ */
+.clean__stop {
+  margin-left: var(--sp-4);
+  white-space: nowrap;
+}
+
+/* --- History ----------------------------------------------------------------- */
+
+/*
+ * Master/detail: the past runs are a rail on the left, one run fills the pane on the
+ * right. The split is a fixed track rather than a fraction, because the fraction that
+ * reads well on a 32-inch monitor leaves the rail unusable at the 1040x700 minimum
+ * window (docs/02-SPEC.md 7.1). There the page box is 46.5rem, so 19rem of rail leaves
+ * 26rem of detail: enough for the volume table and two stat tiles abreast, not enough
+ * for the six-column target table -- which is why that one is allowed to scroll instead
+ * of being crushed (.hist__table-wrap). 19rem is what the rail has to hold: a
+ * 17-character timestamp, two tags on one row, three figures beside each other, and the
+ * card and row padding around all of them.
+ */
+.hist {
+  display: grid;
+  grid-template-columns: 19rem minmax(0, 1fr);
+  gap: var(--sp-6);
+  align-items: start;
+}
+
+/* Each panel is as tall as its own content: the strip is a few lines and the list under
+   it is capped, so stretching either one to match a long detail pane would leave a card
+   with a hand's width of empty ground in it. */
+.hist__side {
+  display: grid;
+  gap: var(--sp-4);
+  align-content: start;
+}
+
+/* One column, in the order renderDetail() appends its blocks, with the log pane after
+   them (history.js:536-548, 577). */
+.hist__main {
+  display: grid;
+  gap: var(--sp-6);
+  align-content: start;
+}
+
+/* Both panels in the rail trade the standard --sp-5 body gutter for --sp-3: the rows
+   inside them carry their own padding, and 19rem cannot afford to spend 2.5rem of itself
+   twice over. One rule for the pair, so the strip and the run list share a left edge. */
+.hist__vols-card .card__body,
+.hist__runs-card .card__body { padding: var(--sp-3); }
+
+/* One row per fixed disk (history.js:167-183). These figures are read against each other,
+   so the value keeps the right edge and the name track is the one that gives way. Two or
+   three rows on any real machine, so nothing here is capped. */
+.hist__vols { display: grid; gap: var(--sp-2); }
+.hist__vol {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--sp-3);
+  align-items: baseline;
+}
+/* display_name is whatever a user typed into a disk label, in any script
+   (history.js:171), so it breaks mid-word rather than widening the rail. */
+.hist__vol-name { color: var(--text-muted); font-size: var(--fs-sm); overflow-wrap: anywhere; }
+/* "123.4 GB free (34%)" arrives as one formatted string, and it is the half being
+   compared down the strip: a wrapped line would take the right edge with it. */
+.hist__vol-free { font-size: var(--fs-sm); font-weight: 600; white-space: nowrap; }
+/* Both resting states -- no fixed disks, and the disk read failed (history.js:160, 164).
+   Neither is actionable from here, the topbar's Refresh is the retry, so this is a muted
+   note and not a red panel. */
+.hist__vols-note { color: var(--text-muted); font-size: var(--fs-sm); }
+
+/*
+ * The run list is capped and scrolls rather than running: fifty receipts at three lines
+ * each is some four thousand pixels of rail, and .content is the page's only scrollport
+ * (layout.css:219), so an uncapped list would push the detail pane and the run log below
+ * the fold of a page you then have to scroll past the rail to read. The cap is
+ * .log__list's (components.css:424) rather than a new number, so the two long lists in
+ * this view stop at the same height.
+ *
+ * The padding is the focus ring. --ring is a 4px outward box-shadow (tokens.css:91) and a
+ * scroll container clips at its padding edge, so without --sp-1 here the keyboard ring on
+ * the first and last run in the scroller would be sliced off.
+ */
+.hist__list {
+  display: grid;
+  max-height: calc(var(--tap) * 12);
+  overflow-y: auto;
+  padding: var(--sp-1);
+}
+
+/* A real <button> (history.js:267), so the reset has already stripped its chrome and it
+   needs the whole box back: three stacked lines, a hairline under it the way .trow
+   separates a dense list, and a left rail the selected state colours in. */
+.hist__item {
+  display: grid;
+  gap: var(--sp-1);
+  min-height: var(--tap);
+  padding: var(--sp-2);
+  border-bottom: 1px solid var(--hairline);
+  border-left: 2px solid transparent;
+  text-align: start;
+  transition: background-color var(--dur-fast) var(--ease),
+              transform var(--dur-fast) var(--ease);
+}
+.hist__item:hover { background: var(--surface-2); }
+/* Hover moves the surface, the press moves the row: SPEC 7.4 wants the two apart by more
+   than a colour. */
+.hist__item:active { transform: translateY(1px); }
+/* Selected, from history.js:311. After :hover and tied with it at (0,2,0), so it wins on
+   source order -- clicking the selected run returns immediately (history.js:320) and must
+   not offer a hover affordance. Three channels, none of them alone: the rail is a shape,
+   the surface is a step in luminance, and aria-current is the third (history.js:312). */
+.hist__item.is-active { background: var(--surface-3); border-left-color: var(--primary-text); }
+
+/* The timestamp is the row's title, and it carries `num`. No state above or below changes
+   its weight: a bolder timestamp is a wider timestamp, and fifty of them starting on one
+   left edge is what makes this list scannable. */
+.hist__item-when { font-size: var(--fs-sm); font-weight: 600; }
+
+/* State and kind, each an icon plus a word plus a colour (history.js:105-121). They wrap
+   onto a second line rather than shrink: nothing in this row may cost a badge its word
+   (SPEC 7.3). */
+.hist__item-tags { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
+
+/*
+ * Three figures per run, compared down fifty rows. Every row is its own grid, so the
+ * tracks have to be EQUAL rather than auto: auto tracks size to each row's own content and
+ * stagger the column, where three equal thirds put row 40's right edges exactly where row
+ * 1 put them. Right-aligned and tabular (`num`, history.js:276-281), and ranked by size --
+ * reclaimed is the figure the receipt exists for, the target count is context.
+ */
+.hist__item-figs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-1) var(--sp-2);
+  align-items: baseline;
+  text-align: right;
+}
+.hist__item-size { font-size: var(--fs-md); font-weight: 600; }
+.hist__item-dur { color: var(--text-muted); font-size: var(--fs-sm); }
+.hist__item-targets { color: var(--text-dim); font-size: var(--fs-xs); }
+
+/* The blocks renderDetail() appends, in its order (history.js:536-542), or one empty state
+   standing in for all of them. A tighter gap than .hist__main's, so the five blocks read
+   as one pane and the run log below reads as a separate object. */
+.hist__detail { display: grid; gap: var(--sp-5); }
+
+/* Range, duration and tags on one line while there is room, wrapping in place at the 26rem
+   pane. Baseline rather than centre: the tag pills sit on the title's baseline instead of
+   floating in the middle of it. */
+.hist__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-2) var(--sp-4);
+}
+/* "{from} to {to}" over two second-precision timestamps (history.js:375-378) runs to about
+   fifty mono characters, past the pane's width at the minimum window, so the heading is
+   allowed a second line -- and deliberately sets no overflow-wrap, because the break
+   belongs at the spaces the range string already has and never inside a timestamp.
+   --fs-lg is .card__title's size: this heading ranks with the cards in the rail, not with
+   the topbar above it, and the pane's big numbers are the stat tiles below. */
+.hist__title { font-size: var(--fs-lg); font-weight: 600; line-height: 1.3; }
+
+/* A label and a figure. The label already carries its own colon (history.duration), so the
+   gap is the only separator needed. */
+.hist__pair { display: flex; align-items: baseline; gap: var(--sp-2); }
+.hist__pair-label { color: var(--text-muted); font-size: var(--fs-sm); }
+.hist__pair-value { font-size: var(--fs-md); font-weight: 600; white-space: nowrap; }
+
+/* Up to three: state, kind, and "stopped by you" when the run carried the cancel flag
+   (history.js:365-371). Same wrap-never-shrink reason as the list row. */
+.hist__tags { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1) var(--sp-2); }
+
+/* Three .stat tiles. 12rem is what one holds without breaking its own figure: .stat__value
+   is --fs-num, so "123.4 GB" is around 9rem of digits plus the tile's padding. auto-fit
+   then gives three columns in the full pane and two at the minimum window, where a third
+   of 26rem would have wrapped every number in the row. */
+.hist__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--sp-4);
+}
+
+/* The engine's own sentence about why a run failed (history.js:409-415): rendered, never
+   parsed, so it has to survive being a path with nowhere to break. Icon, the word "Error:",
+   then the sentence, on the three-track shape .log__line already uses so a long message
+   wraps inside its own column instead of pushing the label. The rim with a heavier left
+   rail is .toast--error's pattern, and the word next to the icon is what keeps this from
+   being red alone (SPEC 7.3). */
+.hist__error {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-2);
+  border: 1px solid var(--danger);
+  border-left-width: 3px;
+  border-radius: var(--r-md);
+}
+/* ui.icon() writes class="ico hist__error-ico" and no sheet styles .ico, so an icon that
+   does not state its own box falls back to the SVG default of 300x150 (layout.css:62-64).
+   Sized off the type scale, like every other icon in the app. */
+.hist__error-ico { width: var(--fs-lg); height: var(--fs-lg); color: var(--danger-text); }
+.hist__error-label { color: var(--danger-text); font-size: var(--fs-sm); font-weight: 600; }
+/* --text-main, not a dimmed red: when a run failed this sentence is the most useful string
+   on the page. It can be a path, so it breaks anywhere rather than escaping the panel. */
+.hist__error-text { font-size: var(--fs-sm); overflow-wrap: anywhere; }
+
+/*
+ * Both tables get a wrapper (history.js:434, 487) and the wrapper is where a table is
+ * allowed to scroll sideways, because crushing a numeric column is worse than scrolling
+ * one: these figures are the receipt.
+ *
+ * The two min-widths are read off the columns each table emits, at the type sizes below:
+ *
+ *   volumes, 4 columns (history.js:437-443) -- root 6rem plus three byte figures at 6rem
+ *     each is 24rem, which still fits the 26rem pane at the 1040px window. This one is
+ *     not expected to scroll anywhere.
+ *   per target, 6 columns (history.js:490-495) -- name 12rem, four figures at 5rem, note
+ *     10rem: 42rem. That does not fit, and it is the table the wrapper exists for. 12rem
+ *     is about 25 characters of a catalogue name; 5rem is the widest of those four headers
+ *     ("Bi tu choi") plus the cell padding; the note column is the one that wraps.
+ */
+.hist__table-wrap { overflow-x: auto; }
+.hist__table { width: 100%; border-collapse: collapse; }
+.hist__table--vols { min-width: 24rem; }
+.hist__table--targets { min-width: 42rem; }
+
+/* A caption centres itself by default, which would leave the only label in the pane with
+   no left edge to read down. */
+.hist__caption {
+  padding-bottom: var(--sp-2);
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  text-align: start;
+}
+
+/* th() gives every header the one class (history.js:135-137), so a header's position in
+   the row is the only thing that can put it over its own column: the figures are right,
+   and the two free-text columns are not -- volume/target first, and the per-target note
+   last. Bottom-aligned, because a header that wraps to two lines still belongs on the
+   line the figures start on. */
+.hist__th {
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--panel-border);
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-align: right;
+  vertical-align: bottom;
+}
+.hist__th:first-child { text-align: start; }
+.hist__table--targets .hist__th:last-child { text-align: start; }
+
+/* Top, not middle: a name that wrapped to three lines, or a two-line note, must not drag
+   the figures in its row off the line their column reads on. */
+.hist__td {
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--hairline);
+  font-size: var(--fs-sm);
+  vertical-align: top;
+}
+/* Alignment follows the number, not the column index: numCell() is the only cell that
+   carries `num` (history.js:139-141), and that is exactly the set of cells with a right
+   edge to hold -- so they are the cells that must never wrap to keep it. */
+.hist__td.num { text-align: right; white-space: nowrap; }
+/* Which leaves the name column as the one that gives way. A catalogue name is free text
+   and the raw target id is the fallback (history.js:146-148); neither can be relied on to
+   contain a space. */
+.hist__cell-name { font-weight: 600; overflow-wrap: anywhere; }
+
+/* Two of these can land in one note cell -- a skip reason and a lock holder
+   (history.js:450-462) -- and as inline spans they would run together into one sentence. */
+.hist__note { display: block; color: var(--text-muted); font-size: var(--fs-xs); overflow-wrap: anywhere; }
+/* "Locked by:" and "Code.exe (pid 9184)" are appended adjacent with no text node between
+   them (history.js:456-459), so the space between the two is this margin. */
+.hist__note-label { color: var(--text-dim); }
+.hist__note-value { margin-left: var(--sp-1); }
+
+/* The pane only: .log owns every line inside it (components.css:398). This wrapper is the
+   node history.js:532/548 hides and shows, and min-width: 0 is the load-bearing half of
+   it -- an engine log line can be a path with nowhere to break, and as a grid item this
+   would otherwise take its min-content width and widen the whole detail column. */
+.hist__console { display: grid; min-width: 0; }
+
+/* --- Settings ----------------------------------------------------------------- */
+
+/*
+ * The only view that writes. Every control saves on change (settings.js:186-201), so
+ * there is no Save button to place, and nothing in here is ever disabled -- the view
+ * refuses to grey out while a job runs on purpose (settings.js:20-24), which is why no
+ * rule below styles a disabled state. What is left is the job that matters: making it
+ * unambiguous which control a label names and which sentence explains it. Three of these
+ * options make the app delete MORE, and that sentence is the only place which says so.
+ */
+
+/* Two children, and the status line is deliberately not inside the other one
+   (settings.js:620-627): render() replaces the body wholesale and would otherwise wipe a
+   "Saved." that is still on screen. */
+.settings {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+/* The half render() throws away (settings.js:558-576), so the rhythm between the three
+   cards and the version line belongs here and not to anything inside them. */
+.settings__body {
+  display: grid;
+  gap: var(--sp-6);
+}
+
+/* Empty for all but the 2.4 seconds after a save (settings.js:211-224), and it sits ABOVE
+   the form: an empty <p> collapsing to nothing would shove all three cards down a line at
+   the moment the user is still pointing at the checkbox they just ticked, so the line is
+   reserved whether it says anything or not. --success because this is the only positive
+   signal the page gives -- every other one is a clamp or a refusal -- and the word carries
+   the meaning on its own for anyone who cannot see the colour. */
+.settings__status {
+  min-height: calc(var(--fs-sm) * 1.5);
+  color: var(--success);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+/* Bounded, and the CARD rather than the fields inside it: the widest control in this view
+   is a four-digit number box, and a rim drawn at the full 78rem content measure around a
+   form half that wide reads as a broken panel, while bounding only the fields would leave
+   the same emptiness inside the rim. Two thirds of the measure still holds a
+   C:\Users\...\AppData\Local exclusion line without wrapping it. */
+.settings__card {
+  max-width: calc(var(--content-max) * 2 / 3);
+}
+
+/* One card body holds one of these (settings.js:85), so .card__body's gap never fires and
+   the spacing between fields is decided here. Far enough apart that a help sentence cannot
+   be read as belonging to the label beneath it: --sp-1 inside a field
+   (components.css:596), --sp-5 between them. */
+.settings__fields {
+  display: grid;
+  gap: var(--sp-5);
+  min-width: 0;
+}
+
+/* The hit target for the three bare checkboxes in this view, and the reason none of them
+   has to be var(--tap) tall itself -- the same trade components.css:281-283 makes for
+   .trow__box. ui.js:643 ties this label to its control with for/id, so a full-width
+   var(--tap) row toggles the box sitting under it (docs/02-SPEC.md 7.4). */
+.settings__fields .field__label {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap);
+  cursor: pointer;
+}
+
+/* Not small print in this view. This is the sentence that says an empty volume list means
+   every volume and that 0 hours means no age floor at all, and settings.js:66-76 has a
+   screen reader read it out WITH the control; --fs-xs is right for a footnote under a stat
+   and wrong for that. The colour is already --text-muted (components.css:601) and stays
+   there -- a --text-main dimmed to look secondary is what this whole sheet refuses. */
+.settings__fields .field__help {
+  font-size: var(--fs-sm);
+}
+
+/*
+ * The two surfaces below, stated once: a control you press rises to --surface-2 like a
+ * .btn, a box you type into sinks to the opaque --surface-1. Both are opaque rather than
+ * --panel-bg, because the card they sit on is already translucent and stacking two of
+ * those puts an input's text on a ground nothing measured.
+ */
+
+/* Native arrow kept: Chromium paints it in currentColor, and appearance:none would mean
+   drawing a replacement out of a gradient, since the CSP allows no url() of any kind. The
+   popup takes this element's own colours, which is the second reason the surface is
+   opaque. min-width because the language list has two entries -- left to size itself it
+   renders as a stub under a full-width label (settings.js:315-318). */
+.settings__select {
+  min-width: 12rem;
+  min-height: var(--tap);
+  padding: var(--sp-1) var(--sp-2);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-main);
+  font-size: var(--fs-md);
+}
+.settings__select:hover { background: var(--surface-3); border-color: var(--text-dim); }
+/* Hover moves the surface, the press moves the control: the pair every button in the app
+   uses, so the two states are told apart without reading a colour (docs/02-SPEC.md 7.4). */
+.settings__select:active { transform: translateY(1px); }
+
+/* A fixed, narrow box, because the width of a number field is a claim about how long the
+   number is: the caps are 8760 hours and 3600 seconds (settings.js:40-41), and the ~20
+   character default input invites a fifth digit the engine would clamp away in silence.
+   Same width for both, so the two figures line up down the card; .num already makes the
+   digits tabular (tokens.css:142). */
+.settings__num {
+  width: 7rem;
+  min-height: var(--tap);
+  padding: var(--sp-1) var(--sp-2);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+  color: var(--text-main);
+  font-size: var(--fs-md);
+}
+/* Said while it is being typed, not only after it is committed: min= and max= validate
+   nothing (settings.js:128-131) and the clamp toast only speaks on change. Colour plus two
+   pixels of border width, so it survives greyscale the way the risk rails do, and
+   border-box keeps the outer box the same size as the digits arrive. */
+.settings__num:invalid {
+  border-color: var(--warning);
+  border-width: 2px;
+}
+
+/* 20px, and deliberately not var(--tap): the visible box and its hit box stay the same
+   size, and the target the pointer is given is the label above it or the volume row around
+   it. flex: none because in that row it is the one item that must not be squeezed by a long
+   volume name, and the UA margin goes because every gap around it is set by a parent. */
+.settings__check {
+  flex: none;
+  width: var(--sp-5);
+  height: var(--sp-5);
+  margin: 0;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+/* The exclusions list: the one field in the app that decides what will NOT be deleted, so
+   it gets an inset ground of its own, room for the six rows settings.js:388 asks for, and a
+   handle to grow -- 64 paths do not fit in six. white-space: pre is load-bearing rather
+   than cosmetic: one line is one exclusion, the cap and the dropped-entry count are both
+   counted in lines (settings.js:233-247), and a soft-wrapped path reads as two entries. */
+.settings__area {
+  width: 100%;
+  min-height: calc(var(--tap) * 5);
+  padding: var(--sp-3);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+  color: var(--text-main);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  white-space: pre;
+  resize: vertical;
+}
+
+/* Save-and-count under the textarea, and Retry under a failed volume read
+   (settings.js:398-410, 447-452). A row rather than a stack, so the count stands beside
+   the button it qualifies instead of reading as the next field's label. */
+.settings__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+/* Pulled back out of the field rhythm: this row acts on the textarea above it, and at the
+   full --sp-5 it floats halfway between the exclusions field and the reset field -- the one
+   place in this view where "which control does this button write?" has a wrong answer. The
+   child combinator leaves the retry row alone, since that one is nested in .settings__vols
+   where the gap is already tight. */
+.settings__fields > .settings__actions {
+  margin-top: calc(var(--sp-3) * -1);
+}
+
+/* How close the list is to the 64 cap, and the three things the volume group says instead
+   of volumes (settings.js:405-409, 446-456, 498). --text-muted at 7.82:1 and a full --fs-sm:
+   "63 of 64" and "the volumes could not be read" are both facts a user acts on, so neither
+   is footnote-sized. min-width so a long sentence wraps inside the actions row rather than
+   widening it. */
+.settings__hint {
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+/* Two or three lettered volumes on a real machine, so a column of full-width rows wastes
+   the card; auto-fill takes as many as the measure holds and falls to one at the 1040px
+   minimum window. The track is a layout fact, not a design decision, so it is written
+   plainly. */
+.settings__vols {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: var(--sp-1) var(--sp-3);
+}
+
+/* Loading, failed and "no lettered volumes" are sentences, not cells: unspanned, the 13rem
+   track breaks each of them across three lines beside two empty columns. */
+.settings__vols .settings__hint {
+  grid-column: 1 / -1;
+}
+
+/* The label IS the hit target -- it wraps the checkbox (settings.js:488-495), so the whole
+   row toggles it, and that is what the var(--tap) height is for. Hover lights the surface
+   and the press moves it, the .nav__item pair, so the two read apart in one colour. */
+.settings__vol {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+  min-height: var(--tap);
+  padding: 0 var(--sp-2);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+.settings__vol:hover { background: var(--surface-2); }
+.settings__vol:active { transform: translateY(1px); }
+
+/* A label somebody typed into Explorer (settings.js:490-494). It wraps rather than
+   ellipsising, for the reason .card__sub does: free text off a disk can be anything, and a
+   row growing a second line costs less than the list growing a column -- or than a name
+   whose distinguishing tail is the part that got cut. */
+.settings__vol-name {
+  min-width: 0;
+  font-size: var(--fs-md);
+  overflow-wrap: anywhere;
+}
+
+/* The last line on the page and the smallest thing on it: the profile format identifier
+   matters exactly once, when a bug report has to say which format wrote the file. It is not
+   a quantity, which is why settings.js:507-516 keeps it out of fmtInt. --text-dim is the
+   floor of the palette at 5.33:1 -- quiet, still readable, and not an opacity. */
+.settings__version {
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}
+
+/* The number is the half worth reading, so it comes back up one step; .mono already sets
+   it apart from the words around it. */
+.settings__version-num {
+  color: var(--text-muted);
+}
+
+/* --- Disk Explorer ------------------------------------------------------------- */
+
+/*
+ * Two cards (explorer.js:1002-1096): a drive strip that starts a walk, and the level
+ * itself -- crumbs, the full path, totals, a treemap, the table, and the notes that say
+ * why a figure is a lower bound.
+ *
+ * Nothing in here is measured from the DOM. The map is a fixed 1000x440 viewBox and this
+ * stylesheet is what decides the box it lands in, so the view never reads a width back --
+ * which is the whole reason a treemap could be hand-rolled under a CSP that blocks
+ * inline style (docs/02-SPEC.md 8).
+ *
+ * The table is the map's accessible equivalent, not a second opinion: same rows, same
+ * figures, real buttons, reachable by keyboard. So it is styled as the primary surface
+ * and the map above it as the illustration.
+ */
+
+/* Same auto-fit measure as .ov__disks, one step narrower: a row here is a name and one
+   "free of total" figure, not a gauge, and 13rem is where both still fit on one line.
+   Three drives on this machine put all three on one row at the 1040px minimum. The error
+   and the empty states are single children (explorer.js:389-406) and auto-fit collapses
+   the tracks they leave empty, so a refusal centres in the block. */
+.dx__vols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--sp-3);
+}
+
+/* The whole row is the target, because what is being clicked is "this drive", not a word
+   in it. A <button> gets nothing from the reset but a pointer (tokens.css:137), so the
+   ground, the border and the floor height are all stated here. */
+.dx__vol {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: var(--tap);
+  padding: var(--sp-3);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  text-align: start;
+  transition: background var(--dur-fast) var(--ease),
+              border-color var(--dur-fast) var(--ease);
+}
+.dx__vol:hover { background: var(--surface-2); border-color: var(--text-dim); }
+.dx__vol:active { transform: translateY(1px); }
+/* The drive whose tree is on screen. aria-current carries this for a screen reader
+   (explorer.js:375-378) -- the border is the sighted half of the same statement, and at
+   (0,2,0) it outranks the disabled rule below, which every drive gets during a walk. */
+.dx__vol.is-active { background: var(--surface-2); border-color: var(--primary-text); }
+/* Last in the block and at (0,2,0): it ties :hover and wins by source order, so a drive
+   cannot light up under the pointer while a walk is running. Flat and legible rather than
+   dimmed -- same reasoning as .btn:disabled (components.css:112). */
+.dx__vol:disabled { background: var(--surface-1); border-color: var(--hairline); color: var(--text-dim); }
+.dx__vol:disabled:active { transform: none; }
+
+/* Every icon must state its own box or fall back to 300x150 (see .hist__error-ico). */
+.dx__vol-ico { width: var(--fs-xl); height: var(--fs-xl); color: var(--text-muted); }
+.dx__vol-body { display: grid; gap: var(--sp-1); min-width: 0; }
+/* A volume label is free text off a disk, so it wraps rather than ellipsising: the
+   distinguishing half of "DATA (E:)" is at the end. */
+.dx__vol-name { font-size: var(--fs-md); font-weight: 600; overflow-wrap: anywhere; }
+.dx__vol-meta { color: var(--text-muted); font-size: var(--fs-xs); }
+
+/* One line of handles that wraps: Up, then a crumb per level, chevrons between. Every one
+   of them is a node_id the engine minted for this level (explorer.js:418-446), so this
+   strip is navigation, not a rendered path -- the path itself is the line below. */
+.dx__crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-2);
+  min-width: 0;
+}
+/* icon-chevron points right (index.html:159-162) and this button means up, so it is the
+   same glyph turned. One symbol, four directions -- the sprite carries no arrow the sort
+   headers below do not also use. */
+.dx__up .btn__ico { transform: rotate(-90deg); }
+
+.dx__crumb {
+  max-width: 14rem;
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-sm);
+  color: var(--primary-text);
+  font-size: var(--fs-sm);
+  /* A folder name has no length limit and a deep tree has no width limit, so a crumb
+     truncates. Nothing is lost by it: the untruncated path is the next line down. */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.dx__crumb:hover { background: var(--surface-2); }
+.dx__crumb:disabled { color: var(--text-dim); }
+/* The folder on screen. Always disabled -- clicking it would re-walk what is already
+   there -- so at (0,2,0) it has to outrank the rule above, or the one crumb the user is
+   standing in would be the dimmest thing in the strip. */
+.dx__crumb.dx__crumb--here { color: var(--text-main); font-weight: 600; }
+.dx__crumb.dx__crumb--here:hover { background: none; }
+.dx__crumb-sep { width: var(--fs-sm); height: var(--fs-sm); color: var(--text-dim); }
+
+/* The one place in this view where a real filesystem path appears, and it appears because
+   the engine sent it in the level header: paths may leave the engine, they may not enter
+   it (bridge.py reveal, SEC-02). Monospaced because it is compared by eye against an
+   Explorer window, and breakable anywhere because a path has nowhere else to break. */
+.dx__path {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+}
+
+/* Everything below the progress bar, hidden as one node until a level exists
+   (explorer.js:990-991). Its own gap, because .card__body's --sp-4 is the gap between the
+   crumbs, the path and this whole block. */
+.dx__body { display: grid; gap: var(--sp-4); min-width: 0; }
+
+/* Five figures, so one step narrower than the four-up rows elsewhere: 11rem holds
+   ">= 123.4 GB" plus the tile's padding at the size set below. */
+.dx__totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--sp-3);
+}
+/* Five --fs-num numbers in one row means none of them is the answer -- the same argument
+   .ov__disk-figs makes, one step further down because there are five here and four there.
+   Only the size changes; the rail, the tone and the tabular digits are the tile's own. */
+.dx__totals .stat__value { font-size: var(--fs-lg); }
+
+/*
+ * The treemap. One <svg> with a 1000x440 viewBox and no width or height attribute
+ * (explorer.js:686-695), so the box below is what it is drawn into and `height: auto`
+ * reproduces the aspect ratio exactly -- which is what makes preserveAspectRatio="none"
+ * harmless: the scale is uniform in practice, and even if it were not, both axes multiply
+ * into every tile and the proportions hold.
+ */
+.dx__map {
+  padding: var(--sp-2);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+}
+/* Between the first poll and the first snapshot there is no level to draw, and an empty
+   bordered box reads as a broken map rather than as nothing yet. */
+.dx__map:empty { display: none; }
+.dx__map-svg { width: 100%; height: auto; }
+/* "Nothing large enough to draw" -- an empty folder, or one whose children are all
+   sub-kilobyte. Said in words, because an empty rectangle says nothing. */
+.dx__map-empty { color: var(--text-muted); font-size: var(--fs-sm); }
+
+/* The <g> owns the hit box and the tooltip; the <rect> is what is painted. Folders are
+   drillable and files are not, so the cursor is the one place that difference shows
+   before the click (explorer.js:620, 658-663). */
+.dx__tile { cursor: default; }
+.dx__tile--open { cursor: pointer; }
+
+/* A rect has no colour of its own -- an unstyled one paints black -- so the base states
+   both, and the four kind rules below override the pair at (0,2,0).
+
+   Solid fills, no fill-opacity: tests/test_ui_assets.py's opacity sweep is unanchored and
+   reads `fill-opacity: .35` as dimming, which is the right call for the reason it gives --
+   a tint over a translucent panel has no knowable contrast, and there is text on these
+   tiles. So each kind gets its own opaque token instead of one colour at four strengths. */
+.dx__tile-box {
+  fill: var(--surface-2);
+  stroke: var(--hairline);
+  stroke-width: 1;
+  transition: stroke var(--dur-fast) var(--ease), stroke-width var(--dur-fast) var(--ease);
+}
+/* Folders carry the weight of the map: they are what the numbers are about and the only
+   tiles that go anywhere. --primary-deep is a fill token, and --text-main on it measures
+   6.4:1 -- the tightest pair on the map and still past AA. */
+.dx__tile--dir .dx__tile-box { fill: var(--primary-deep); stroke: var(--primary); }
+/* A leaf. Ground it in the panel's own surface and let the edge say which kind it is:
+   --secondary is the rebuildable rail everywhere else in the app, and a file inside a
+   cache folder is exactly that. */
+.dx__tile--file .dx__tile-box { fill: var(--surface-3); stroke: var(--secondary); }
+/* A junction or symlink, amber for the same reason the row gets a caution tag: the size
+   beside it is the target's, and the walk deliberately did not follow it. */
+.dx__tile--link .dx__tile-box { fill: var(--surface-2); stroke: var(--warning); }
+/* The remainder tile -- everything past the 36-tile cap plus the engine's own other_size
+   (explorer.js:521-527). It is not a folder and cannot be opened, so it recedes. */
+.dx__tile--other .dx__tile-box { fill: var(--surface-1); stroke: var(--panel-border); }
+/* Two units of gap between tiles (MAP_GAP), so the hover stroke stops at 2 rather than
+   growing into the neighbour. */
+.dx__tile--open:hover .dx__tile-box { stroke: var(--primary-text); stroke-width: 2; }
+
+/*
+ * SVG text is in user units, and these two sizes are tied to three constants in the view:
+ * the labels are only drawn above 108x44 units, their baselines are +20 and +37 from the
+ * tile's top, and clip() budgets 8.4 units per character. 8.4 over 14 is 0.6em, which is
+ * wider than Segoe UI Semibold actually averages -- so the estimate cuts a character early
+ * rather than one late, and SVG has no overflow clipping to catch the difference.
+ *
+ * Both lines are --text-main. --text-muted would be 2.8:1 on a folder tile, which is the
+ * trap in dimming a sub-label: the ground under it is not the page.
+ */
+.dx__tile-name { fill: var(--text-main); font-size: 14px; font-weight: 600; }
+.dx__tile-size { fill: var(--text-main); font-size: 12px; }
+
+/* Filter on the left, the count of what survived it on the right, and they swap to two
+   rows when the pane cannot hold both. align-items: end so the count sits on the input's
+   baseline rather than floating beside its label. */
+.dx__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+/* At (0,2,0) this only widens the field inside this toolbar; .field itself (0,1,0) stays
+   the plain label-over-control stack it is everywhere else. Capped, because a search box
+   the width of the pane claims the filter is the main event. */
+.dx__tools .field { flex: 1 1 16rem; max-width: 24rem; }
+/* Same box as .settings__num, full width instead of fixed: this one holds a folder name,
+   not a three-digit number. */
+.dx__filter {
+  width: 100%;
+  min-height: var(--tap);
+  padding: var(--sp-1) var(--sp-2);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+  color: var(--text-main);
+  font-size: var(--fs-md);
+}
+/* "12 / 240" -- the one figure that says a filter is hiding something. */
+.dx__count { color: var(--text-muted); font-size: var(--fs-sm); }
+
+/*
+ * The table, and the wrapper is where it is allowed to scroll sideways -- crushing a
+ * numeric column is worse than scrolling one, the same call .hist__table-wrap makes.
+ *
+ * 48rem is read off the six columns at the sizes below: name 14rem (about 28 characters
+ * of a folder name before it wraps), size 6rem, share 4.5rem, items 9rem ("12 thu muc /
+ * 40 tep"), modified 10rem (a locale date and time, tabular and never wrapped), actions
+ * 5rem for two 1.75rem icon buttons. That does not fit the 44rem pane at the 1040px
+ * minimum window, which is what the wrapper is for.
+ */
+.dx__table-wrap { overflow-x: auto; }
+.dx__table { width: 100%; min-width: 48rem; border-collapse: collapse; }
+/* A caption centres itself by default, which would leave the table's only label with no
+   left edge to read down. */
+.dx__caption {
+  padding-bottom: var(--sp-2);
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  text-align: start;
+}
+
+/* Alignment is per column and the view says which columns are numbers (explorer.js:744),
+   so it is a class here rather than an nth-child count -- the column order is the view's
+   business. Bottom-aligned, because a header that wrapped to two lines still belongs on
+   the line the figures start on. */
+.dx__th {
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--panel-border);
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-align: start;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+.dx__th--num { text-align: right; }
+/* The column the rows are ordered by. aria-sort states it for a screen reader
+   (explorer.js:751); this is the same fact for everyone else. */
+.dx__th--sorted { color: var(--text-main); }
+
+/* A header that sorts is a real button, and the header cell is all of it: the text and
+   the arrow are one target. inline-flex keeps it inside the cell's text-align, so it
+   right-aligns in a numeric column without a rule of its own. 1.5rem is the AAA
+   target-size floor -- --fs-xs at 1.5 line-height would be 18px on its own. */
+.dx__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: 1.5rem;
+  padding: 0;
+  color: inherit;
+  font-weight: 600;
+  text-align: inherit;
+}
+.dx__sort:hover { color: var(--primary-text); }
+/* Same chevron as the crumb separator, turned. Two classes and two rules rather than one
+   computed one, so the stylesheet audit can see both directions (explorer.js:763-765). */
+.dx__arrow { width: var(--fs-sm); height: var(--fs-sm); color: var(--primary-text); }
+.dx__arrow--up { transform: rotate(-90deg); }
+.dx__arrow--down { transform: rotate(90deg); }
+
+/* The row is not clickable -- its two buttons are -- so the hover is orientation across a
+   48rem row, not an affordance. */
+.dx__tr:hover { background: var(--surface-1); }
+/* Top, not middle: a name that wrapped to three lines must not drag the figures in its
+   row off the line their column reads on. */
+.dx__td {
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--hairline);
+  font-size: var(--fs-sm);
+  vertical-align: top;
+}
+/* Alignment follows the number, not the column index: `num` is on exactly the cells with
+   a right edge to hold, so they are the cells that must never wrap to keep it. */
+.dx__td.num { text-align: right; white-space: nowrap; }
+
+/* The column that gives way. width: 100% on one cell is the table-layout idiom for "this
+   column absorbs the slack": the five figures beside it keep their content width and this
+   one grows, which is also why it is the only column allowed to wrap. */
+.dx__td--name { width: 100%; }
+/* svg is display: block in the reset (tokens.css:147), so the kind glyph has to be put
+   back into the line beside the name -- and it has to state its own box or fall back to
+   300x150. text-bottom rather than a magic offset. */
+.dx__row-ico {
+  display: inline-block;
+  width: var(--fs-md);
+  height: var(--fs-md);
+  margin-right: var(--sp-2);
+  color: var(--text-muted);
+  vertical-align: text-bottom;
+}
+.dx__name { font-weight: 600; overflow-wrap: anywhere; }
+/* Under the name, not after it: one of these can be the engine's own error sentence
+   (explorer.js:816-819), and beside a name in a 14rem column that would push the row into
+   a shape no other row has. Same call .hist__note makes for the same reason. */
+.dx__row-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  margin-top: var(--sp-1);
+}
+/* Two icon buttons, or one for a file. nowrap so they stay a pair; the column is sized for
+   both in the min-width above. */
+.dx__td--act { text-align: right; white-space: nowrap; }
+/* The node the empty state is put into is always present and cleared on every repaint
+   (explorer.js:924-931), so when there is nothing to say it must not still be taking a
+   grid row's gap. */
+.dx__table-empty:empty { display: none; }
+
+/*
+ * Why a figure above is not the whole story: a truncated walk, a logical-size fallback,
+ * omitted children, a denied subtree, an engine error, a cancelled run. Each is a fact the
+ * engine sent, and each one changes how the totals should be read (explorer.js:957-978).
+ *
+ * One quiet colour for all six. The icon differs per note and is the third channel
+ * (docs/02-SPEC.md 7.3), but the wording is what carries the fact -- these are footnotes
+ * under a number, not alerts, and six coloured rails under one table would outweigh the
+ * table.
+ */
+.dx__notes { display: grid; gap: var(--sp-1); }
+.dx__notes:empty { display: none; }
+.dx__note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+}
+.dx__note-ico { width: var(--fs-md); height: var(--fs-md); color: var(--text-dim); }
+
+/* --- Shadow copies ------------------------------------------------------------- */
+
+/* The eighth view, and the only one with no sidebar entry: it is reached from the Clean
+   view's vss_manage row (app.js EXTRA, views/vss.js's header). Same stacked shape as the
+   Overview -- an intro card, then one card per storage, then the copies table -- because
+   nothing here scrolls inside a card and the reading order is the order of the page. */
+.vss {
+  display: grid;
+  gap: var(--sp-6);
+  align-content: start;
+}
+.vss__body { display: grid; gap: var(--sp-6); }
+/* Why the screen exists, in a sentence: BUG-09 in prose. A paragraph, not a label, so it
+   wraps at the card's own measure. */
+.vss__lede { color: var(--text-muted); overflow-wrap: anywhere; }
+
+/* Used, allocated, maximum. Three tracks at 8rem like .ov__stats, so a narrow window drops
+   them to two and then one rather than squeezing a byte figure into four characters. */
+.vss__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: var(--sp-3);
+}
+
+/* The footnotes under those figures: vssadmin's own "approximate", what 10 % works out to
+   in bytes, and how many copies are on this volume. Facts that qualify the numbers above,
+   in the same quiet voice as .dx__note. */
+.vss__notes { display: grid; gap: var(--sp-1); margin-top: var(--sp-3); }
+.vss__note { color: var(--text-muted); font-size: var(--fs-sm); overflow-wrap: anywhere; }
+
+
+/*
+ * The two directions, and the separation is the whole point (docs/02-SPEC.md 5). Raising
+ * the ceiling is the repair; deleting copies is the damage. Four buttons in one row would
+ * read as four settings of equal weight, so each direction gets a titled block of its own
+ * and they stack -- a column, never side by side, because side by side is a row again.
+ */
+.vss__acts { display: grid; gap: var(--sp-4); margin-top: var(--sp-5); }
+.vss__group {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+}
+/* The danger block is fenced the way a dangerous row is: a rail down the left edge plus the
+   icon in its title, so the difference survives greyscale (docs/02-SPEC.md 7.3). */
+.vss__group--danger {
+  border-color: var(--danger);
+  border-left-width: 4px;
+}
+.vss__grouptitle {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+.vss__groupico { width: var(--fs-lg); height: var(--fs-lg); color: var(--text-muted); }
+.vss__group--danger .vss__groupico { color: var(--danger-text); }
+.vss__groupsub { color: var(--text-muted); font-size: var(--fs-sm); }
+/* Wrapping, because "Set to 10 %" and "Remove the cap" are two words longer in Vietnamese
+   and a button that clips its own label is not a label. */
+.vss__buttons { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-1); }
+
+/*
+ * One table for every copy on the machine. Four columns, and the last one is a GUID:
+ * {8-4-4-4-12} is 38 characters that cannot be broken usefully, so the table gets a floor
+ * and the wrapper scrolls under it rather than the id wrapping into three lines.
+ *
+ * The floor: volume 4rem, created 12rem (a localised timestamp as the service printed it),
+ * provider 10rem, id 20rem -- 46rem, which does not fit the pane at the 1040 minimum
+ * window and is why this wrapper exists at all.
+ */
+.vss__table-wrap { overflow-x: auto; }
+.vss__table { width: 100%; min-width: 46rem; border-collapse: collapse; }
+/* Left-aligned, like .hist__caption: the only label above the table needs the same left
+   edge the first column reads down. */
+.vss__caption {
+  padding-bottom: var(--sp-2);
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  text-align: start;
+}
+/* Every column here is free text -- a letter, a date, a provider name, a GUID -- so unlike
+   the History table there is no figure column to right-align and every header reads from
+   the same edge as its cells. */
+.vss__th {
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--panel-border);
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-align: start;
+  vertical-align: bottom;
+}
+.vss__td {
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--hairline);
+  font-size: var(--fs-sm);
+  vertical-align: top;
+}
+/* The two cells that carry .mono are the timestamp and the id, and both are compared down
+   the column -- a wrap would break the comparison, and the wrapper above is what gives them
+   room instead. */
+.vss__td.mono { white-space: nowrap; }
+
+/* --- view: projects (Project Sweeper) ---------------------------------------- */
+
+.ps__body { display: grid; gap: var(--sp-4); min-width: 0; }
+
+.ps__controls { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: flex-end; }
+.ps__root-box { flex: 1 1 20rem; min-width: 0; }
+.ps__root { width: 100%; min-height: var(--tap); padding: var(--sp-1) var(--sp-2); border: 1px solid var(--panel-border); border-radius: var(--r-sm); background: var(--surface-1); color: var(--text-main); font-size: var(--fs-md); }
+.ps__age-box { display: flex; align-items: center; gap: var(--sp-2); }
+.ps__age { width: 5rem; min-height: var(--tap); padding: var(--sp-1) var(--sp-2); border: 1px solid var(--panel-border); border-radius: var(--r-sm); background: var(--surface-1); color: var(--text-main); font-size: var(--fs-md); text-align: right; }
+.ps__age-unit { color: var(--text-muted); font-size: var(--fs-sm); }
+
+.ps__totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: var(--sp-3); }
+
+.ps__tools { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: var(--sp-3); }
+.ps__filter-box { flex: 1 1 16rem; max-width: 24rem; }
+.ps__filter { width: 100%; min-height: var(--tap); padding: var(--sp-1) var(--sp-2); border: 1px solid var(--panel-border); border-radius: var(--r-sm); background: var(--surface-1); color: var(--text-main); font-size: var(--fs-md); }
+
+.ps__cat-bar { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-2); }
+.ps__cat-btn { display: inline-flex; align-items: center; min-height: var(--tap); padding: 0 var(--sp-3); border: 1px solid var(--panel-border); border-radius: var(--r-pill); background: transparent; color: var(--text-muted); font-size: var(--fs-sm); transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease); }
+.ps__cat-btn:hover { background: var(--surface-2); color: var(--text-main); }
+.ps__cat-btn.is-active { background: var(--primary-deep); border-color: var(--primary-text); color: var(--text-main); }
+.ps__cat-btn.is-active:hover { background: var(--primary); color: var(--bg-color); }
+
+.ps__table-wrap { overflow-x: auto; }
+.ps__table { width: 100%; min-width: 48rem; border-collapse: collapse; }
+.ps__caption { padding-bottom: var(--sp-2); color: var(--text-muted); font-size: var(--fs-sm); font-weight: 600; text-align: start; }
+
+.ps__th { padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--panel-border); color: var(--text-muted); font-size: var(--fs-xs); font-weight: 600; text-align: start; vertical-align: bottom; white-space: nowrap; }
+.ps__th--num { text-align: right; }
+.ps__th--check { width: var(--sp-8); padding: var(--sp-2); text-align: center; }
+.ps__th--sorted { color: var(--text-main); }
+.ps__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: 1.5rem;
+  padding: 0;
+  color: inherit;
+  font-weight: 600;
+  text-align: inherit;
+}
+.ps__sort:hover { color: var(--primary-text); }
+.ps__arrow { width: var(--fs-sm); height: var(--fs-sm); color: var(--primary-text); }
+.ps__arrow--up { transform: rotate(-90deg); }
+.ps__arrow--down { transform: rotate(90deg); }
+.ps__count { color: var(--text-muted); font-size: var(--fs-sm); }
+
+.ps__tr:hover { background: var(--surface-1); }
+.ps__td { padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--hairline); font-size: var(--fs-sm); vertical-align: top; }
+.ps__td.num { text-align: right; white-space: nowrap; }
+.ps__td--name { width: 100%; }
+.ps__td--act { text-align: right; white-space: nowrap; }
+.ps__td--check { width: var(--sp-8); padding: var(--sp-2); text-align: center; vertical-align: middle; }
+
+.ps__table-empty:empty { display: none; }
+
+.ps__cat { display: inline-flex; align-items: center; padding: 0 var(--sp-2); border: 1px solid currentColor; border-radius: var(--r-pill); font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; }
+.ps__cat--node_modules { color: var(--success); }
+.ps__cat--venv { color: var(--secondary); }
+.ps__cat--build { color: var(--warning); }
+.ps__cat--cache { color: var(--text-muted); }
+.ps__cat--framework { color: var(--primary-text); }
+
+.ps__safe-tag { display: inline-flex; align-items: center; padding: 0 var(--sp-1); border: 1px solid var(--success); border-radius: var(--r-sm); color: var(--success); font-size: var(--fs-xs); }
+
+.ps__project-path { display: block; max-width: 20rem; margin-top: var(--sp-1); color: var(--text-muted); font-size: var(--fs-xs); font-family: var(--font-mono); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+.ps__notes { display: grid; gap: var(--sp-1); margin-top: var(--sp-2); }
+.ps__notes:empty { display: none; }
+.ps__note { display: flex; align-items: flex-start; gap: var(--sp-2); color: var(--text-muted); font-size: var(--fs-sm); overflow-wrap: anywhere; }
+.ps__note-ico { width: var(--fs-md); height: var(--fs-md); color: var(--text-dim); }
+
+.ps__idle { color: var(--text-muted); font-size: var(--fs-xs); }
