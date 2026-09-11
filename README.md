@@ -1,175 +1,239 @@
-# Disk CleanUp v2.0
+# Disk CleanUp
 
-> **Modern Windows Disk Reclamation Utility with WebView2 Desktop Shell**  
-> An ultra-fast, multi-volume disk cleanup and maintenance tool designed for Windows 10/11. Built specifically to eliminate developer caches, build artifacts, orphan virtualenvs, WSL2/Docker bloated virtual disks, and unbounded VSS restore point storage.
+<p align="center">
+  <strong>High-performance, zero-network Windows disk reclamation utility and multi-volume storage analyzer.</strong>
+</p>
 
----
-
-## 🌟 Highlights of Version 2.0 (Những Điểm Nổi Bật)
-
-- **Native Desktop Application**: Completely eliminated the v1 localhost HTTP server (`localhost:8342`). Built using `pywebview` on top of Microsoft Edge WebView2, communicating in-process via a type-checked Python-JS bridge loaded strictly over `file://` with strict Content Security Policy (`connect-src 'none'`, `font-src 'none'`).
-- **Zero Network Exposure**: No open ports, no listening sockets, zero firewall popups, impervious to DNS rebinding or cross-origin script attacks.
-- **49 Curated Targets**: Scans developer tool caches (uv, npm, pnpm, yarn, pip, Cargo, NuGet, Go, Gradle, Maven, Flutter, ccache), browser data, IDE logs, crash dumps, and Windows system update caches.
-- **4-Tier Safety Model**: Targets categorized into `SAFE` (instant purge), `REBUILDABLE` (re-downloadable dependencies), `CAUTION` (user data or stateful tools), and `DANGEROUS` (irreversible, requires explicit double-confirmation).
-- **Interactive Multi-Volume Disk Explorer**: Visualize disk space usage with dynamic SVG treemaps and drill down into subfolders on any mounted drive (C:, D:, E:...) using opaque handle navigation.
-- **Project Sweeper**: Deep scan any directory tree (e.g., `E:\PROJECT`) for abandoned `node_modules`, `.venv`, and build folders (`dist`, `target`, `out`, `build`) based on idle age thresholds. Two-stage preview with single-use cryptographic plan tokens prevents accidental deletions.
-- **Volume Shadow Service (VSS) Manager**: Visual inspector for Windows restore points with storage ceiling controls (prevents SQL Server / backup tools from consuming 15-20% of your disk).
-- **WSL2 / Docker VHDX Compaction**: Automatic graceful shutdown and `diskpart` compaction of dynamic `.vhdx` disks, reclaiming tens of gigabytes.
-- **Bilingual Interface**: Seamless live-switching between Vietnamese (Tiếng Việt) and English (EN) with zero reload.
+<p align="center">
+  <a href="https://github.com/103PU/disk-cleaner/releases/latest"><img src="https://img.shields.io/github/v/release/103PU/disk-cleaner?style=flat-square&color=blue" alt="Latest Release" /></a>
+  <a href="https://github.com/103PU/disk-cleaner/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/103PU/disk-cleaner/ci.yml?branch=main&style=flat-square&label=CI" alt="CI Status" /></a>
+  <img src="https://img.shields.io/badge/tests-959%20passed-brightgreen?style=flat-square" alt="959 Tests Passed" />
+  <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011%20x64-0078D6?style=flat-square&logo=windows" alt="Platform: Windows x64" />
+  <img src="https://img.shields.io/badge/python-3.12-3776AB?style=flat-square&logo=python" alt="Python 3.12" />
+  <img src="https://img.shields.io/badge/shell-Microsoft%20Edge%20WebView2-0078D7?style=flat-square" alt="Shell: WebView2" />
+  <img src="https://img.shields.io/badge/security-Zero%20Network%20Ports-success?style=flat-square" alt="Zero Network Exposure" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License: MIT" /></a>
+</p>
 
 ---
 
-## 🚀 Installation & Quick Start (Cài Đặt & Khởi Chạy)
+## 📖 Overview
 
-### Option 1: Using the Installer (Khuyên Dùng)
-Download and run the standalone installer:
+Modern software engineering environments, AI agent frameworks, container runtimes, and compiler toolchains silently consume tens of gigabytes of disk space over time. Standard Windows utilities (`cleanmgr.exe` / Storage Sense) are oblivious to developer toolchains, virtual disk fragmentation, or volume shadow storage bloat.
+
+**Disk CleanUp** is an enterprise-grade desktop utility specifically engineered for Windows developers, DevOps engineers, and power users. It safely identifies, visualizes, and purges developer tool caches, abandoned build directories, bloated Docker/WSL2 virtual disks (`.vhdx`), and unbounded Volume Shadow Copies — all without opening a single network port.
+
+---
+
+## ⚡ Key Highlights
+
+- 🔒 **Zero Network Exposure (`SEC-01`)**: Completely in-process desktop architecture powered by `pywebview` and Microsoft Edge WebView2. Operates strictly over `file://` with an uncompromising Content Security Policy (`connect-src 'none'`, `font-src 'none'`). Zero open listening sockets, zero firewall prompts, immune to DNS rebinding and cross-origin attacks.
+- 🎯 **49 Curated System & Developer Targets**: Granular support across 12 package managers and ecosystems (`uv`, `npm`, `pnpm`, `yarn`, `pip`, `Cargo`, `NuGet`, `Go`, `Gradle`, `Maven`, `Flutter`, `ccache`), browsers (`Chrome`, `Edge`, `Brave`), IDE logs, crash dumps, and Windows Update downloads.
+- 🛡️ **4-Tier Defense-in-Depth Safety Model**: Every operation is strictly classified into `SAFE`, `REBUILDABLE`, `CAUTION`, or `DANGEROUS`. Irreversible actions require double-confirmation and are excluded from presets.
+- 🧹 **Project Sweeper**: Deep-walks code workspaces (e.g., `E:\PROJECT`) to reclaim abandoned `node_modules`, `.venv`, and build targets (`dist`, `build`, `target`, `out`) older than configurable idle thresholds, while strictly protecting active repositories.
+- 🗺️ **Interactive Multi-Volume Disk Explorer**: Real-time disk visualization featuring proportional SVG treemaps, breadcrumb navigation, and opaque-handle drill-down across all mounted drives (C:, D:, E:...).
+- 🐳 **WSL2 & Docker VHDX Compaction**: Programmatic automation for graceful WSL2 instance shutdown and native `diskpart` compaction of dynamic `.vhdx` disks, reclaiming 15–25 GB in seconds.
+- 💾 **Volume Shadow Service (VSS) Ceiling Management**: Visual inspector for restore points with storage ceiling controls (e.g., 2 GB or 10% maximum quota) preventing silent disk leaks after software installations.
+- 🛑 **Chrome AI Weights Blocker**: Permanent filesystem-level directory lock (`+s +h +r` system attributes) blocking Google Chrome from silently downloading 4 GB Gemini Nano model weights into your user profile.
+- 🌐 **Seamless Bilingual UI**: Instant live hot-switching between English and Vietnamese (Tiếng Việt) with 100% string key parity and zero page reload.
+
+---
+
+## 🚀 Installation & Quick Start
+
+### Option 1: Standard Windows Installer (Recommended)
+Download and run the official 64-bit setup executable from [GitHub Releases](https://github.com/103PU/disk-cleaner/releases/latest):
 ```text
-dist/DiskCleanUp-Setup-2.0.0-x64.exe
+DiskCleanUp-Setup-2.0.0-x64.exe (~13 MB)
 ```
-- Installs to `%ProgramFiles%\Disk CleanUp` (or per-user directory if non-admin).
-- Automatically verifies or prompts for Microsoft Edge WebView2 Runtime.
-- Creates Start Menu shortcut and optional Desktop shortcut.
-- Clean uninstaller with prompt to preserve or delete diagnostic logs.
+- Installs to `%ProgramFiles%\Disk CleanUp` (or per-user directory for non-admin accounts).
+- Automatically verifies Microsoft Edge WebView2 Runtime availability.
+- Creates clean Start Menu shortcuts and uninstaller with diagnostic log preservation options.
 
 ### Option 2: Standalone Portable Bundle
-Run the executable directly without installation:
+Download the standalone archive from [GitHub Releases](https://github.com/103PU/disk-cleaner/releases/latest):
 ```text
-dist\DiskCleanUp\DiskCleanUp.exe
+DiskCleanUp-v2.0.0-windows-x64-portable.zip (~31 MB)
 ```
-Or launch via the root launcher script:
+Extract and launch directly:
 ```cmd
-run_cleaner.bat
+DiskCleanUp\DiskCleanUp.exe
 ```
 
+### Option 3: Run from Source (Development Mode)
+Prerequisites: **Windows 10/11 x64**, **Python 3.12**, and **[uv](https://github.com/astral-sh/uv)**.
 
-### Option 3: Developer / Source Mode
 ```powershell
-# Prerequisites: Python 3.12.x and uv
-git clone <repo-url>
-cd antigravity-disk-cleaner
+# Clone the repository
+git clone https://github.com/103PU/disk-cleaner.git
+cd disk-cleaner
 
-# Sync dependencies and run
+# Sync pinned dependencies
 uv sync
+
+# Launch the desktop application
 uv run python -m adc
+
+# Run in debug mode (enables WebView2 DevTools on F12)
+uv run python -m adc --debug
+
+# Run self-check headless diagnostic validation
+uv run python -m adc --self-check
 ```
 
 ---
 
-## 🛠️ Key Feature Modules (Các Tính Năng Cốt Lõi)
+## 🏛️ Architecture & Security Model
 
-### 1. Dọn Dẹp Danh Mục (Clean View)
-- Scans all 49 system and developer locations.
-- Real-time preview with byte estimates, file counts, and lock status detection.
-- Fast presets:
-  - **An Toàn (Safe)**: 100% regenerable developer & browser caches.
-  - **Mặc Định (Balanced)**: Safe + Rebuildable dependencies.
-  - **Toàn Bộ (All)**: Full disk scan across all tiers.
-- Two-stage execution: confirmation modal details exactly what will be removed before a single file is deleted.
-
-### 2. Khám Phá Ổ Đĩa (Disk Explorer)
-- Multi-volume selector with live drive capacity bars.
-- Interactive SVG treemap showing proportional folder sizes.
-- Breadcrumb navigation with sorting by size, item count, modified time, or name.
-- Direct "Mở trong Explorer" (Reveal in Explorer) actions.
-
-### 3. Dọn Dẹp Dự Án (Project Sweeper)
-- Deep-walks any chosen root folder (defaulting to `E:\PROJECT`).
-- Identifies forgotten directories by rule manifest validation (e.g. `node_modules` beside `package.json`, `.venv` with `pyvenv.cfg`).
-- Filters by idle days (default: 30+ days untouched).
-- Strictly protects active projects (modified within the threshold).
-- Two-phase preview/execute workflow backed by 600-second plan tokens.
-
-### 4. Quản Lý Bản Sao Bóng (VSS & Restore Points)
-- Displays all active Volume Shadow Copies on each partition.
-- Sets storage bounds (e.g. 2 GB or 10% ceiling) via programmatic Win32 vssadmin integration.
-- Safely deletes stale snapshots without impacting disk integrity.
-
-### 5. Khóa Tệp AI Chrome 4GB (Chrome AI Weights Blocker)
-- Permanently blocks Google Chrome from silently downloading Gemini Nano model weights (`weights.bin` ~4 GB) into your user profile.
-- Replaces target with an immutable filesystem directory lock with System (`+s`), Hidden (`+h`), and Read-only (`+r`) attributes.
-
----
-
-## 🏗️ Architecture & Security Model (Kiến Trúc & Bảo Mật)
+Disk CleanUp enforces a layered architecture separating UI rendering, Win32 interop, argument validation, and disk manipulation primitives:
 
 ```text
-┌────────────────────────────────────────────────────────┐
-│             PyWebView (Edge WebView2)                  │
-│       file://index.html  (connect-src: 'none')         │
-│   ┌────────────────────────────────────────────────┐   │
-│   │ UI Views: Overview | Clean | Explorer | Sweeper│   │
-│   │ UI Components: Tables, Stats, Console, Modals  │   │
-│   └───────────────────────┬────────────────────────┘   │
-└───────────────────────────┼────────────────────────────┘
-                            │ In-Process JS-Python Bridge
-┌───────────────────────────▼────────────────────────────┐
-│                    adc.shell.bridge                    │
-│   - Opaque handles (node_id) & Plan Tokens (TTL 600s)  │
-│   - Input sanitization & Path fences (no raw paths)    │
-│   - Single-instance mutex & Admin elevation handoff    │
-└───────────────────────────┬────────────────────────────┘
-                            │
-┌───────────────────────────▼────────────────────────────┐
-│                    adc.engine.*                        │
-│   catalogue | cleaner | explorer | sweeper | vssadmin  │
-│   docker    | shadow  | guard    | runner  | win32     │
-└────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│                   Desktop Shell (Edge WebView2)                        │
+│             file://index.html  (connect-src 'none', font-src 'none')   │
+│   ┌────────────────────────────────────────────────────────────────┐   │
+│   │  Views: Overview | Clean | Explorer | Sweeper | VSS | Schedule │   │
+│   │  Components: Treemaps, DataTables, Modals, Terminal Console    │   │
+│   └───────────────────────────────┬────────────────────────────────┘   │
+└───────────────────────────────────┼────────────────────────────────────┘
+                                    │ In-Process JavaScript-Python Bridge
+┌───────────────────────────────────▼────────────────────────────────────┐
+│                           adc.shell.bridge                             │
+│   - Opaque random node_id handles (no raw filesystem paths in UI)      │
+│   - Cryptographic single-use plan tokens (600s TTL)                    │
+│   - PerMonitorV2 High-DPI & single-instance Win32 Mutex               │
+│   - Process elevation handoff (RunAs Administrator)                    │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ Strongly-Typed API Calls
+┌───────────────────────────────────▼────────────────────────────────────┐
+│                           adc.engine.*                                 │
+│   catalogue | cleaner | explorer | sweeper | vssadmin | docker_vhdx   │
+│   fsutil    | guard   | runner   | report  | platform_win              │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
-- **SEC-01 (No Network)**: Zero HTTP/TCP servers. Everything runs in-process via Win32 WebView2 interop.
-- **SEC-02 (Handle Isolation)**: Frontend never passes raw filesystem paths to destructive endpoints. All operations reference ephemeral, randomized `node_id` handles verified by `guard.py`.
-- **SEC-03 (Token Exclusivity)**: Execution requires spending a single-use preview token minted during the preview step. Tampering with parameters or selection invalidates the token.
-- **SEC-04 (Junction/Reparse Safety)**: Filesystem scanner explicitly refuses to follow directory junctions or symbolic links, avoiding recursive delete traps.
+### Security Invariants
+
+| Identifier | Security Principle | Implementation Guarantee |
+| :--- | :--- | :--- |
+| **SEC-01** | **Zero Network Ports** | No localhost HTTP/TCP daemon. Communication is completely in-process via Win32 WebView2 web-message channels. |
+| **SEC-02** | **Handle Isolation** | Frontend DOM never receives or transmits raw filesystem paths for destructive actions; all references use randomized, ephemeral `node_id` tokens. |
+| **SEC-03** | **Plan Token Exclusivity** | Every deletion strictly requires spending a single-use preview token minted during the preview step. Tampering with target IDs invalidates the token. |
+| **SEC-04** | **Reparse Point Immunity** | The filesystem walker explicitly detects and refuses to traverse NTFS directory junctions or symbolic links, completely neutralizing recursive deletion loops. |
+| **SEC-05** | **Path Guard Fences** | Hardcoded boundary assertions reject any request targeting critical system paths (`Windows`, `System32`, `Program Files`, user documents, or `.git` repositories). |
+| **SEC-06** | **Strict CSP Enforcement** | Header policy `default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; font-src 'none'` permanently eliminates script injection. |
 
 ---
 
-## 🧪 Testing & Verification (Kiểm Thử & Đóng Gói)
+## 🎯 Target Catalogue (49 Curated Targets)
 
-### Running the Test Suite
+Disk CleanUp organizes system and developer caches into four well-defined safety tiers:
+
+### 1. Developer Ecosystems & Toolchains (Safe / Rebuildable)
+- **Python**: `uv` cache (`uv cache clean`), `pip` cache, `pipenv`, virtualenv wheels, Poetry cache.
+- **Node.js & JavaScript**: `npm` cache (`npm cache clean --force`), `pnpm` store (`pnpm store prune`), `yarn` cache (`yarn cache clean`), Bun cache.
+- **Rust**: `Cargo` registry cache, git checkouts (`cargo clean`).
+- **.NET & C#**: `NuGet` global-packages cache, NuGet HTTP cache, NuGet temporary scratch files.
+- **Go**: `Go` build cache (`go clean -cache`), module download cache (`go clean -modcache`).
+- **Java / JVM**: `Gradle` wrapper & cache, `Maven` `.m2/repository` download cache.
+- **Mobile & Native**: `Flutter` engine & artifact cache, `ccache` compiler output cache.
+
+### 2. Web Browsers & Developer IDEs (Safe / Caution)
+- **Google Chrome**: Web Cache, Code Cache, GPUCache, Crashpad Dumps, Service Worker storage.
+- **Microsoft Edge**: Edge Cache, EBWebView application data, GPUCache.
+- **Brave Browser**: Brave Web Cache and temporary offline cache.
+- **IDEs**: VS Code Cache & GPU Cache, JetBrains IDE system logs, Visual Studio telemetry scratch.
+
+### 3. Windows System & Maintenance (Caution / Dangerous)
+- **Windows Update**: `SoftwareDistribution\Download` staging directory.
+- **System Logs**: CBS servicing logs, Component Based Servicing crash reports.
+- **Diagnostics**: Memory crash dumps (`MEMORY.DMP`), minidump logs, WER error reports.
+- **Storage**: Windows Delivery Optimization cache, `%TEMP%` scratch files, Windows Recycle Bin.
+- **Virtualization**: Docker Desktop dynamic `ext4.vhdx` and WSL2 distribution disk compaction.
+- **Restore Points**: Volume Shadow Service (VSS) snapshot inventory and quota adjustment.
+
+---
+
+## 🧹 Project Sweeper: Stale Workspace Cleaner
+
+Developers frequently have dozens of cloned repositories containing forgotten `node_modules` or `.venv` folders that occupy hundreds of gigabytes.
+
+```text
+E:\PROJECT\
+  ├── project-alpha/ (Modified 2 days ago)     ──> [PROTECTED: Actively developing]
+  ├── client-portal/ (Modified 120 days ago)   ──> [OFFERED: node_modules (1.4 GB), .venv (850 MB)]
+  └── archived-api/  (Modified 240 days ago)   ──> [OFFERED: target/ (4.2 GB), dist/ (320 MB)]
+```
+
+- **Manifest Validation**: A directory named `node_modules` is only considered if validated by a neighboring `package.json`; a `.venv` directory requires a valid `pyvenv.cfg`.
+- **Active Project Shielding**: If any source file in the repository was touched within the configurable threshold (default: 30 days), the entire repository is protected from automated cleanup.
+- **Pre-Execution Preview**: Generates an exact itemized bill of materials before presenting a confirmation dialog.
+
+---
+
+## 💻 Command Line Interface (CLI)
+
+While Disk CleanUp is primarily an interactive desktop application, the executable provides headless CLI diagnostic switches:
+
 ```powershell
-# Run full unit & integration tests (959 tests)
+# Show version and metadata
+DiskCleanUp.exe --version
+
+# Run headless self-check diagnostics (validates WebView2, Win32 mutex, and elevation)
+DiskCleanUp.exe --self-check
+
+# Launch desktop GUI with Chromium DevTools enabled (F12)
+DiskCleanUp.exe --debug
+```
+
+Example output of `--self-check`:
+```text
+renderer=edgechromium
+webview2_runtime=148.0.3967.96
+admin=True
+single_instance=ok
+http_server=none
+dpi_per_monitor=True
+ui=E:\PROJECT\antigravity-disk-cleaner\src\adc\ui
+log=C:\Users\Administrator\AppData\Local\DiskCleanUp\logs\adc-20260911.log
+```
+
+---
+
+## 🧪 Testing & Verification
+
+Disk CleanUp adheres to strict software quality gates:
+
+```powershell
+# Run the automated test suite (959 unit & integration tests)
 uv run pytest -q --tb=short
 
-# Run static linting and type checks
+# Run Ruff linter and import sorting verification
 uv run ruff check
+
+# Run strict Mypy static type analysis across engine and shell boundaries
 uv run mypy src/adc/engine src/adc/shell
 ```
 
-### Automated Build Pipeline
+### Release Build Pipeline
+To produce clean standalone binaries and the Inno Setup installer locally:
 ```powershell
-# Build standalone bundle + Inno Setup installer
-pwsh -File build.ps1
-
-# Build PyInstaller bundle only (skip Inno Setup)
-pwsh -File build.ps1 -SkipInstaller
+# Execute full build sequence (Tests -> PyInstaller -> Inno Setup -> SHA256 Checksums)
+pwsh -File build.ps1 -Clean
 ```
-The build artifacts are output to:
-- `dist/DiskCleanUp/` (standalone executable bundle ~31 MB)
-- `dist/DiskCleanUp-Setup-2.0.0-x64.exe` (full Windows installer ~13 MB)
-- `dist/SHA256SUMS.txt` (cryptographic checksums)
+
+Artifacts are output to:
+- `dist/DiskCleanUp/` (Standalone executable bundle, ~31 MB)
+- `dist/DiskCleanUp-Setup-2.0.0-x64.exe` (Windows Installer, ~13 MB)
+- `dist/SHA256SUMS.txt` (SHA-256 integrity signatures)
 
 ---
 
-## 🇻🇳 Tài Liệu Tiếng Việt (Tóm Tắt)
+## 📄 License & Acknowledgments
 
-Ứng dụng **Disk CleanUp v2.0** giúp bạn tự động phân tích, dọn dẹp và bảo vệ dung lượng ổ đĩa Windows (đặc biệt là ổ C:) khi làm việc với các hệ thống AI Agents, Docker/WSL2 và môi trường phát triển phần mềm vốn tạo ra lượng lớn bộ nhớ đệm và file tạm.
-
-### Các Tính Năng Đột Phá Trên v2.0:
-1. **Ứng Dụng Desktop Độc Lập**: Hoàn toàn không mở cổng mạng localhost (`no HTTP server`), giao diện WebView2 mượt mà, khởi động tức thì, có file cài đặt riêng (`DiskCleanUp-Setup-2.0.0-x64.exe`).
-2. **Khám Phá Ổ Đĩa (Disk Explorer)**: Bản đồ nhiệt Treemap trực quan cho tất cả các ổ đĩa C:, D:, E:..., duyệt thư mục không giới hạn độ sâu.
-3. **Dọn Dẹp Dự Án (Project Sweeper)**: Quét cây thư mục dự án (như `E:\PROJECT`) để tìm các thư mục `node_modules`, `.venv`, `dist`, `build` bị bỏ quên lâu ngày mà không đụng vào các dự án đang phát triển tích cực.
-4. **Quản Lý Điểm Khôi Phục VSS**: Đặt giới hạn trần 2 GB hoặc 10% cho Volume Shadow Copies, ngăn ngừa việc Windows tự động phình to ổ cứng sau khi cài đặt SQL Server hoặc phần mềm hệ thống.
-5. **Nén Đĩa Ảo WSL2 / Docker**: Tự động tắt WSL2 và gọi lệnh `diskpart` nén file `.vhdx`, thu hồi ngay lập tức từ 15–20 GB dung lượng thực tế.
-6. **Khóa Tệp AI Chrome 4GB**: Tạo thư mục khoá có thuộc tính bảo vệ hệ thống ngăn chặn Chrome tự động tải file mô hình Gemini Nano 4GB vào profile.
-
-7. **Bảo Vệ Đa Tầng**: 4 mức độ rủi ro (`SAFE`, `REBUILDABLE`, `CAUTION`, `DANGEROUS`), mã xác thực xoá dùng 1 lần (TTL 600s), không bao giờ xoá nhầm thư mục quan trọng.
-
----
-
-## 📄 License & Credits
-
-- **License**: MIT License.
-- **Authors**: Antigravity Contributors (2026).
-- **Core Dependencies**: [pywebview](https://pywebview.flowrl.com/), [pythonnet](https://pythonnet.github.io/), Microsoft Edge WebView2.
-
-
+- **License**: Released under the [MIT License](LICENSE).
+- **Core Dependencies**:
+  - [pywebview](https://pywebview.flowrl.com/) — Desktop shell abstraction.
+  - [pythonnet](https://pythonnet.github.io/) — Native Win32 CLR bridge.
+  - [Microsoft Edge WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) — Evergreen Chromium rendering engine.
+  - [Inno Setup 6](https://jrsoftware.org/isinfo.php) — Professional Windows installer compilation.
