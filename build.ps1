@@ -64,10 +64,11 @@ if (-not $SkipTests) {
 
 # 3. PyInstaller Build
 Write-Host "`n[3/4] Building PyInstaller onedir bundle..." -ForegroundColor Yellow
-& uv run pyinstaller --noconfirm --distpath dist --workpath build/temp build/adc.spec
+& uv run --extra build pyinstaller --noconfirm --distpath dist --workpath build/temp build/adc.spec
 if ($LASTEXITCODE -ne 0) {
     Write-Error "PyInstaller build failed!"
 }
+
 
 # Verify output
 $ExePath = "dist/DiskCleanUp/DiskCleanUp.exe"
