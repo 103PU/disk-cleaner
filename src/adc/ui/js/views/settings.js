@@ -500,6 +500,206 @@
     return group;
   }
 
+  /* --- application updates ------------------------------------------------------- */
+
+  var updateState = {
+    checked: false,
+    checking: false,
+    info: null,
+    progress: null,
+    pollTimer: null,
+    error: null
+  };
+
+  function stopUpdatePoll() {
+    if (updateState.pollTimer) {
+      window.clearTimeout(updateState.pollTimer);
+      updateState.pollTimer = null;
+    }
+  }
+
+  function pollUpdateProgress() {
+    stopUpdatePoll();
+    ADC.api.updaterDownloadProgress().then(function (res) {
+      if (!res || !res.progress) { return; }
+      updateState.progress = res.progress;
+      if (updateState.progress.status === 'downloading') {
+        if (active) { render(); }
+        updateState.pollTimer = window.setTimeout(pollUpdateProgress, 300);
+      } else {
+        if (active) { render(); }
+      }
+    }, function () {
+      stopUpdatePoll();
+    });
+  }
+
+  function checkUpdates(force) {
+    updateState.checking = true;
+    updateState.error = null;
+    if (active) { render(); }
+    ADC.api.updaterCheck(force === true).then(function (res) {
+      updateState.checking = false;
+      updateState.checked = true;
+      updateState.info = res ? res.info : null;
+      if (active) { render(); }
+    }, function (err) {
+      updateState.checking = false;
+      updateState.checked = true;
+      updateState.error = (err && err.text) ? err.text() : String(err && err.message ? err.message : err);
+      if (active) { render(); }
+    });
+  }
+
+  function startUpdateDownload() {
+    ADC.api.updaterDownloadStart().then(function (res) {
+      if (res && res.progress) {
+        updateState.progress = res.progress;
+      }
+      if (active) { render(); }
+      pollUpdateProgress();
+    }, function (err) {
+      ui.showError(err);
+    });
+  }
+
+  function cancelUpdateDownload() {
+    stopUpdatePoll();
+    ADC.api.updaterDownloadCancel().then(function (res) {
+      if (res && res.progress) {
+        updateState.progress = res.progress;
+      }
+      if (active) { render(); }
+    }, function (err) {
+      ui.showError(err);
+    });
+  }
+
+  function installUpdate() {
+    ADC.api.updaterInstall().then(function () {
+      ui.toast(i18n.t('settings.updates.installing'), { kind: 'info' });
+    }, function (err) {
+      ui.showError(err);
+    });
+  }
+
+  function updatesCard() {
+    var c = ui.card({
+      i18n: 'settings.updates', sub: 'settings.updates.sub', icon: 'icon-refresh', class: 'settings__card'
+    });
+
+    var fields = ui.el('div', { class: 'settings__fields' });
+    var infoBox = ui.el('div', { class: 'settings__update-info' });
+
+    var curLine = ui.el('p', {}, [
+      ui.el('span', { i18n: 'settings.updates.current' }),
+      ui.el('span', { class: 'mono', text: 'v' + '2.0.0' })
+    ]);
+    infoBox.appendChild(curLine);
+
+    if (updateState.checking) {
+      infoBox.appendChild(ui.el('p', { class: 'settings__hint', i18n: 'settings.updates.checking' }));
+      fields.appendChild(infoBox);
+      c.body.appendChild(fields);
+      return c;
+    }
+
+    if (updateState.error) {
+      infoBox.appendChild(ui.el('p', { class: 'settings__hint' }, [
+        ui.el('span', { i18n: 'settings.updates.failed' }),
+        document.createTextNode(updateState.error)
+      ]));
+      fields.appendChild(infoBox);
+      fields.appendChild(ui.el('div', { class: 'settings__actions' }, [
+        ui.btn({
+          i18n: 'settings.updates.check_btn', icon: 'icon-refresh', variant: 'primary',
+          on: { click: function () { checkUpdates(true); } }
+        })
+      ]));
+      c.body.appendChild(fields);
+      return c;
+    }
+
+    if (!updateState.checked) {
+      infoBox.appendChild(ui.el('p', { class: 'settings__hint', i18n: 'settings.updates.idle' }));
+      fields.appendChild(infoBox);
+      fields.appendChild(ui.el('div', { class: 'settings__actions' }, [
+        ui.btn({
+          i18n: 'settings.updates.check_btn', icon: 'icon-refresh', variant: 'primary',
+          on: { click: function () { checkUpdates(true); } }
+        })
+      ]));
+      c.body.appendChild(fields);
+      return c;
+    }
+
+    var info = updateState.info;
+    if (!info || !info.available) {
+      infoBox.appendChild(ui.el('p', { class: 'settings__hint', i18n: 'settings.updates.latest' }));
+      fields.appendChild(infoBox);
+      fields.appendChild(ui.el('div', { class: 'settings__actions' }, [
+        ui.btn({
+          i18n: 'settings.updates.recheck_btn', icon: 'icon-refresh', variant: 'ghost',
+          on: { click: function () { checkUpdates(true); } }
+        })
+      ]));
+      c.body.appendChild(fields);
+      return c;
+    }
+
+    infoBox.appendChild(ui.el('p', {}, [
+      ui.el('strong', { i18n: 'settings.updates.available_title' }),
+      ui.el('span', { class: 'mono', text: info.latest_version + ' (' + i18n.fmtBytes(info.asset_size) + ')' })
+    ]));
+
+    if (info.release_notes) {
+      infoBox.appendChild(ui.el('div', { class: 'settings__update-notes', text: info.release_notes }));
+    }
+
+    fields.appendChild(infoBox);
+
+    var prog = updateState.progress;
+    if (prog && prog.status === 'downloading') {
+      var progContainer = ui.el('div', { class: 'settings__update-prog' });
+      var pBar = ui.progress();
+      var pct = typeof prog.pct === 'number' ? prog.pct : 0;
+      var mbDone = (prog.bytes_downloaded / (1024 * 1024)).toFixed(1);
+      var mbTotal = (prog.total_bytes / (1024 * 1024)).toFixed(1);
+      pBar.set(pct, pct + '% (' + mbDone + ' MB / ' + mbTotal + ' MB)');
+      progContainer.appendChild(pBar);
+
+      fields.appendChild(progContainer);
+      fields.appendChild(ui.el('div', { class: 'settings__actions' }, [
+        ui.btn({
+          i18n: 'settings.updates.cancel_btn', icon: 'icon-stop', variant: 'ghost',
+          on: { click: cancelUpdateDownload }
+        })
+      ]));
+    } else if (prog && prog.status === 'completed') {
+      fields.appendChild(ui.el('p', { class: 'settings__hint', i18n: 'settings.updates.completed' }));
+      fields.appendChild(ui.el('div', { class: 'settings__actions' }, [
+        ui.btn({
+          i18n: 'settings.updates.install_btn', icon: 'icon-play', variant: 'primary',
+          on: { click: installUpdate }
+        })
+      ]));
+    } else {
+      fields.appendChild(ui.el('div', { class: 'settings__actions' }, [
+        ui.btn({
+          i18n: 'settings.updates.download_btn', icon: 'icon-play', variant: 'primary',
+          on: { click: startUpdateDownload }
+        }),
+        ui.btn({
+          i18n: 'settings.updates.recheck_btn', icon: 'icon-refresh', variant: 'ghost',
+          on: { click: function () { checkUpdates(true); } }
+        })
+      ]));
+    }
+
+    c.body.appendChild(fields);
+    return c;
+  }
+
   /* --- schema version, and the no-settings panel -------------------------------- */
 
   /* schema_version, small and dim. An identifier, not a quantity, so it does NOT go through
@@ -568,6 +768,7 @@
     body.appendChild(languageCard(s));
     body.appendChild(scanningCard(s));
     body.appendChild(safetyCard(s));
+    body.appendChild(updatesCard(s));
     body.appendChild(versionLine(s));
     if (refocus) {
       var again = document.getElementById(refocus);
@@ -646,6 +847,9 @@
        re-renders when it lands rather than holding the form back on a round trip. */
     if (presetNames === null) { loadCatalog(); }
     if (volumeRows === null && !volumesFailed) { loadVolumes(false); }
+    if (updateState.progress && updateState.progress.status === 'downloading') {
+      pollUpdateProgress();
+    }
     return actions;
   }
 
@@ -655,6 +859,7 @@
        is looking at, and does not pull focus back into it. */
     active = false;
     clearStatus();
+    stopUpdatePoll();
   }
 
   function relang() {

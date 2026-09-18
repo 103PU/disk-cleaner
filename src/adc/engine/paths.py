@@ -71,6 +71,11 @@ def scan_db() -> Path:
     return cache_dir() / "scan.sqlite"
 
 
+def updates_dir() -> Path:
+    """Directory where downloaded installer updates are stored."""
+    return local_dir() / "updates"
+
+
 def ensure(directory: Path) -> Path:
     """mkdir -p, returning the directory so callers can inline the call."""
     directory.mkdir(parents=True, exist_ok=True)

@@ -310,6 +310,13 @@
     scheduleGet: function () { return call('schedule_get'); },
     scheduleSet: function (config) { return call('schedule_set', config || {}); },
     scheduleDelete: function () { return call('schedule_delete'); },
-    scheduleRunNow: function () { return call('schedule_run_now'); }
+    scheduleRunNow: function () { return call('schedule_run_now'); },
+
+    /* In-app updater */
+    updaterCheck: function (force) { return call('updater_check', force === true); },
+    updaterDownloadStart: function () { return call('updater_download_start'); },
+    updaterDownloadProgress: function () { return call('updater_download_progress'); },
+    updaterDownloadCancel: function () { return call('updater_download_cancel'); },
+    updaterInstall: function () { return call('updater_install'); }
   };
 })();

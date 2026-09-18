@@ -1755,3 +1755,59 @@ def test_the_page_can_reach_every_method_the_bridge_exposes() -> None:
 
     assert sorted(surface - wired) == [], "public Bridge methods with no ADC.api wrapper"
     assert sorted(wired - surface) == [], "ADC.api calls a method Bridge does not have"
+
+
+def test_updater_bridge_endpoints(api: Bridge, monkeypatch: pytest.MonkeyPatch) -> None:
+    from unittest.mock import MagicMock
+
+    from adc.engine import updater
+
+    mock_mgr = MagicMock()
+    fake_info = updater.UpdateInfo(
+        available=True,
+        current_version="2.0.0",
+        latest_version="v2.1.0",
+        release_name="Disk CleanUp v2.1.0",
+        release_notes="Notes",
+        published_at="2026-09-18T12:00:00Z",
+        asset_name="DiskCleanUp-Setup-2.1.0-x64.exe",
+        asset_url="https://example.com/installer.exe",
+        asset_size=1024,
+        sha256="abc",
+        html_url="https://example.com",
+    )
+    mock_mgr.check_update.return_value = fake_info
+    mock_mgr.start_download.return_value = updater.DownloadProgress(
+        status="downloading", total_bytes=1024
+    )
+    mock_mgr.get_progress.return_value = updater.DownloadProgress(status="downloading", pct=50.0)
+    mock_mgr.cancel_download.return_value = updater.DownloadProgress(status="cancelled")
+    mock_mgr.launch_installer.return_value = True
+
+    monkeypatch.setattr(updater, "get_manager", lambda: mock_mgr)
+
+    # updater_check
+    res_check = api.updater_check(force=True)
+    assert res_check["ok"] is True
+    assert res_check["data"]["available"] is True
+    assert res_check["data"]["info"]["latest_version"] == "v2.1.0"
+
+    # updater_download_start
+    res_start = api.updater_download_start()
+    assert res_start["ok"] is True
+    assert res_start["data"]["progress"]["status"] == "downloading"
+
+    # updater_download_progress
+    res_prog = api.updater_download_progress()
+    assert res_prog["ok"] is True
+    assert res_prog["data"]["progress"]["pct"] == 50.0
+
+    # updater_download_cancel
+    res_cancel = api.updater_download_cancel()
+    assert res_cancel["ok"] is True
+    assert res_cancel["data"]["progress"]["status"] == "cancelled"
+
+    # updater_install
+    res_inst = api.updater_install()
+    assert res_inst["ok"] is True
+    assert res_inst["data"]["launched"] is True

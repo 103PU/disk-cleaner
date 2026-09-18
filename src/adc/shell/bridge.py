@@ -35,7 +35,18 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Final, ParamSpec
 
-from adc.engine import audit, explorer, paths, report, scanner, schedule, sweeper, targets, vss
+from adc.engine import (
+    audit,
+    explorer,
+    paths,
+    report,
+    scanner,
+    schedule,
+    sweeper,
+    targets,
+    updater,
+    vss,
+)
 from adc.engine import platform_win as win
 from adc.engine import settings as settings_mod
 from adc.engine import volumes as volumes_mod
@@ -1476,4 +1487,43 @@ class Bridge:
         ok = schedule.run_schedule_now()
         status = schedule.get_schedule_status()
         return {"triggered": ok, "status": status.as_dict()}
+
+    @guarded
+    def updater_check(self, force: object = False) -> dict[str, Any]:
+        """Check GitHub for newer releases of Disk CleanUp."""
+        try:
+            info = updater.get_manager().check_update(force=bool(force))
+            return {"available": info.available, "info": info.as_dict()}
+        except updater.UpdateError as exc:
+            raise BridgeError(exc.code, exc.vi, exc.en) from exc
+
+    @guarded
+    def updater_download_start(self) -> dict[str, Any]:
+        """Begin downloading the update installer package."""
+        try:
+            progress = updater.get_manager().start_download()
+            return {"progress": progress.as_dict()}
+        except updater.UpdateError as exc:
+            raise BridgeError(exc.code, exc.vi, exc.en) from exc
+
+    @guarded
+    def updater_download_progress(self) -> dict[str, Any]:
+        """Poll the ongoing update download progress."""
+        progress = updater.get_manager().get_progress()
+        return {"progress": progress.as_dict()}
+
+    @guarded
+    def updater_download_cancel(self) -> dict[str, Any]:
+        """Cancel an in-progress update download."""
+        progress = updater.get_manager().cancel_download()
+        return {"progress": progress.as_dict()}
+
+    @guarded
+    def updater_install(self) -> dict[str, Any]:
+        """Launch the downloaded update installer."""
+        try:
+            ok = updater.get_manager().launch_installer()
+            return {"launched": ok}
+        except updater.UpdateError as exc:
+            raise BridgeError(exc.code, exc.vi, exc.en) from exc
 

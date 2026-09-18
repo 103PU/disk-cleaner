@@ -150,6 +150,17 @@
   color: var(--primary-text);
 }
 
+.nav__badge {
+  margin-left: auto;
+  padding: 2px 6px;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  line-height: 1;
+  background: var(--primary);
+  color: var(--text-main);
+}
+
 /* --- sidebar foot ------------------------------------------------------------- */
 
 /* margin-top:auto is the whole reason this element exists: it holds the admin banner

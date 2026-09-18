@@ -39,6 +39,7 @@ def test_the_four_locations_sit_under_local_except_config(
     assert paths.reports_dir() == tmp_path / "reports"
     assert paths.cache_dir() == tmp_path / "cache"
     assert paths.scan_db() == tmp_path / "cache" / "scan.sqlite"
+    assert paths.updates_dir() == tmp_path / "updates"
 
 
 def test_override_beats_the_environment(

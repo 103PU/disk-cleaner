@@ -98,7 +98,7 @@ def test_engine_imports_are_stdlib_or_sibling(repo_root: Path) -> None:
         {
             "__future__", "ast", "collections", "collections.abc", "contextlib",
             "csv", "ctypes", "dataclasses", "datetime", "enum", "errno", "fnmatch",
-            "functools", "glob", "io", "itertools", "json", "logging", "math", "os",
+            "functools", "glob", "hashlib", "io", "itertools", "json", "logging", "math", "os",
             "os.path", "pathlib", "platform", "re", "shutil", "sqlite3", "stat",
             "string", "subprocess", "sys", "tempfile", "threading", "time",
             "traceback", "types", "typing", "urllib", "uuid", "warnings", "winreg",
@@ -125,7 +125,10 @@ def test_engine_imports_are_stdlib_or_sibling(repo_root: Path) -> None:
     assert strays == [], "engine grew a dependency: " + "; ".join(strays)
 
 
-@pytest.mark.parametrize("module", ["fsutil", "guard", "jobs", "paths", "report", "volumes"])
+@pytest.mark.parametrize(
+    "module",
+    ["fsutil", "guard", "jobs", "paths", "report", "volumes", "schedule", "updater"],
+)
 def test_engine_module_imports_without_a_gui_stack(module: str) -> None:
     """Each module imports on its own, in this plain process. No WebView2 here."""
     __import__(f"adc.engine.{module}")

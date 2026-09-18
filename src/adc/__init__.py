@@ -1,3 +1,5 @@
 """Disk CleanUp v2."""
 
-__version__ = "2.0.0"
+from adc.engine.updater import APP_VERSION as __version__
+
+__all__ = ["__version__"]

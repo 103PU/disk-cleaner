@@ -1116,6 +1116,34 @@
   color: var(--text-muted);
 }
 
+.settings__update-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  font-size: var(--fs-md);
+  color: var(--text-main);
+}
+
+.settings__update-notes {
+  max-height: 140px;
+  margin-top: var(--sp-2);
+  padding: var(--sp-3);
+  overflow-y: auto;
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  white-space: pre-wrap;
+}
+
+.settings__update-prog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+
 /* --- Disk Explorer ------------------------------------------------------------- */
 
 /*

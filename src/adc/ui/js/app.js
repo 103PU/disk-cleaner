@@ -80,6 +80,7 @@
     dom.adminOk = byId('admin-ok');
     dom.adminCount = byId('admin-count');
     dom.adminRelaunch = byId('admin-relaunch');
+    dom.settingsUpdateBadge = byId('settings-update-badge');
     dom.sections = {};
     for (var i = 0; i < ROUTES.length; i += 1) {
       dom.sections[ROUTES[i]] = byId('view-' + ROUTES[i]);
@@ -429,6 +430,19 @@
    *   admin      -- not awaited. The sidebar banner appearing 80 ms late is invisible;
    *                 delaying the first paint on it would not be.
    */
+  function checkAppUpdate() {
+    api.updaterCheck(false).then(function (res) {
+      if (res && res.available) {
+        if (dom.settingsUpdateBadge) {
+          dom.settingsUpdateBadge.hidden = false;
+        }
+        ui.toast(i18n.t('update.toast_available'), { kind: 'info' });
+      }
+    }, function () {
+      /* Silent on startup if offline */
+    });
+  }
+
   function afterBridge() {
     loadSettings().then(null, function (err) {
       ui.showError(err);
@@ -439,6 +453,7 @@
       markLang(i18n.lang);
       go(FIRST);
       loadAdmin();
+      checkAppUpdate();
     });
   }
 
