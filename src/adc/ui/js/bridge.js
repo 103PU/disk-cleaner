@@ -304,6 +304,12 @@
     reveal: function (targetId) { return call('reveal', targetId); },
     history: function (limit) { return call('history', limit); },
     reportDetail: function (jobId) { return call('report_detail', jobId); },
-    openLog: function () { return call('open_log'); }
+    openLog: function () { return call('open_log'); },
+
+    /* Automated maintenance schedule (Task Scheduler) */
+    scheduleGet: function () { return call('schedule_get'); },
+    scheduleSet: function (config) { return call('schedule_set', config || {}); },
+    scheduleDelete: function () { return call('schedule_delete'); },
+    scheduleRunNow: function () { return call('schedule_run_now'); }
   };
 })();

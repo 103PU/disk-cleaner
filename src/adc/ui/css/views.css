@@ -1657,3 +1657,185 @@
 .ps__note-ico { width: var(--fs-md); height: var(--fs-md); color: var(--text-dim); }
 
 .ps__idle { color: var(--text-muted); font-size: var(--fs-xs); }
+
+/* --- view: schedule (Automated Maintenance) --------------------------------- */
+
+.sched {
+  display: grid;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+.sched__body {
+  display: grid;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+.sched__card {
+  max-width: calc(var(--content-max) * 2 / 3);
+}
+
+.sched__fields {
+  display: grid;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+.sched__status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+
+.sched__info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--sp-3);
+}
+
+.sched__info-item {
+  display: grid;
+  gap: var(--sp-1);
+  padding: var(--sp-3);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+}
+
+.sched__info-label {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
+
+.sched__info-val {
+  color: var(--text-main);
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+
+.sched__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.sched__select {
+  min-width: 14rem;
+  min-height: var(--tap);
+  padding: var(--sp-1) var(--sp-2);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-main);
+  font-size: var(--fs-md);
+}
+.sched__select:hover { background: var(--surface-3); border-color: var(--text-dim); }
+.sched__select:active { transform: translateY(1px); }
+
+.sched__time {
+  width: 7rem;
+  min-height: var(--tap);
+  padding: var(--sp-1) var(--sp-2);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+  color: var(--text-main);
+  font-size: var(--fs-md);
+}
+
+.sched__check {
+  flex: none;
+  width: var(--sp-5);
+  height: var(--sp-5);
+  margin: 0;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.sched__days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.sched__day-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap);
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.sched__day-btn:hover { background: var(--surface-2); color: var(--text-main); }
+.sched__day-btn.is-active { background: var(--primary-deep); border-color: var(--primary-text); color: var(--text-main); }
+.sched__day-btn.is-active:hover { background: var(--primary); color: var(--bg-color); }
+
+.sched__notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border: 1px solid var(--panel-border);
+  border-left: 3px solid var(--primary);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+}
+
+.sched__notice-ico {
+  width: var(--fs-md);
+  height: var(--fs-md);
+  color: var(--primary-text);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.sched__notice-text {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.sched__targets {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.sched__target-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+}
+
+.sched__target-name {
+  flex: 1 1 auto;
+  color: var(--text-main);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.sched__status-msg {
+  min-height: calc(var(--fs-sm) * 1.5);
+  color: var(--success);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.sched__status-warn {
+  color: var(--warning);
+}
+

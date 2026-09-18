@@ -42,6 +42,27 @@ def _parser() -> argparse.ArgumentParser:
         action="store_true",
         help="open WebView2 devtools",
     )
+    parser.add_argument(
+        "--headless",
+        action="store_true",
+        help="run automated cleanup in headless mode without UI (SPEC 6.5)",
+    )
+    parser.add_argument(
+        "--preset",
+        default="safe",
+        help="preset to clean in headless mode (defaults to 'safe', only safe allowed)",
+    )
+    parser.add_argument(
+        "--threshold-pct",
+        type=int,
+        default=None,
+        help="skip cleanup if all fixed volumes have free space above this percentage",
+    )
+    parser.add_argument(
+        "--targets",
+        default=None,
+        help="comma-separated list of target ids to clean (must all be SAFE tier)",
+    )
     return parser
 
 
@@ -66,11 +87,29 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     log = audit.get(__name__)
     log.info(
-        "adc %s starting: self_check=%s relaunched=%s",
+        "adc %s starting: self_check=%s relaunched=%s headless=%s",
         __version__,
         args.self_check,
         args.relaunched,
+        args.headless,
     )
+
+    if args.headless:
+        from adc.engine import schedule
+        target_ids = (
+            [t.strip() for t in args.targets.split(",") if t.strip()]
+            if args.targets
+            else None
+        )
+        try:
+            return schedule.run_headless(
+                preset=args.preset,
+                threshold_pct=args.threshold_pct,
+                target_ids=target_ids,
+            )
+        except Exception:
+            log.exception("headless run failed")
+            return 1
 
     # Imported here, not at module scope: --version and --self-check must not
     # depend on pythonnet loading, and a frozen build should fail with a readable

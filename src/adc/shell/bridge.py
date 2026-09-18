@@ -35,7 +35,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Final, ParamSpec
 
-from adc.engine import audit, explorer, paths, report, scanner, sweeper, targets, vss
+from adc.engine import audit, explorer, paths, report, scanner, schedule, sweeper, targets, vss
 from adc.engine import platform_win as win
 from adc.engine import settings as settings_mod
 from adc.engine import volumes as volumes_mod
@@ -1434,3 +1434,46 @@ class Bridge:
             approved.preview.printable, result.ok, result.code,
         )
         return {"action": approved.as_dict(), "result": result.as_dict()}
+
+    @guarded
+    def schedule_get(self) -> dict[str, Any]:
+        """Return the current schedule configuration and live task status."""
+        status = schedule.get_schedule_status()
+        return {"status": status.as_dict()}
+
+    @guarded
+    def schedule_set(self, raw_config: object = None) -> dict[str, Any]:
+        """Validate, persist and register the automated cleanup schedule.
+
+        Enforces that only SAFE-tier targets may be included in the schedule.
+        """
+        if not isinstance(raw_config, dict):
+            raise BridgeError(
+                "bad_input",
+                "Dữ liệu lịch trình không hợp lệ.",
+                "Invalid schedule configuration payload.",
+            )
+        try:
+            cfg = schedule.ScheduleConfig.from_dict(raw_config)
+            status = schedule.set_schedule(cfg)
+            return {"status": status.as_dict()}
+        except schedule.NonSafeTargetError as err:
+            raise BridgeError(
+                "schedule_unsafe_target",
+                f"Lịch tự động chỉ cho phép các mục tầng An toàn: {err}",
+                f"Scheduled tasks only permit SAFE-tier targets: {err}",
+            ) from err
+
+    @guarded
+    def schedule_delete(self) -> dict[str, Any]:
+        """Remove the automated cleanup task from Task Scheduler."""
+        status = schedule.delete_schedule()
+        return {"status": status.as_dict()}
+
+    @guarded
+    def schedule_run_now(self) -> dict[str, Any]:
+        """Trigger the scheduled cleanup task immediately."""
+        ok = schedule.run_schedule_now()
+        status = schedule.get_schedule_status()
+        return {"triggered": ok, "status": status.as_dict()}
+

@@ -68,12 +68,20 @@ begin
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  ResultCode: Integer;
 begin
+  if CurUninstallStep = usUninstall then
+  begin
+    // SPEC 6.5: Remove Task Scheduler task if created
+    Exec('schtasks.exe', '/Delete /TN "DiskCleanUp_AutoClean" /F', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  end;
   if CurUninstallStep = usPostUninstall then
   begin
     if MsgBox('Ban co muon xoa toan bo du lieu cau hinh va bao cao don dep tai %LOCALAPPDATA%\DiskCleanUp khong?' + #13#10 + '(Do you want to delete all configuration and reports in %LOCALAPPDATA%\DiskCleanUp?)', mbConfirmation, MB_YESNO) = IDYES then
     begin
       DelTree(ExpandConstant('{localappdata}\DiskCleanUp'), True, True, True);
+      DelTree(ExpandConstant('{appdata}\DiskCleanUp'), True, True, True);
     end;
   end;
 end;
