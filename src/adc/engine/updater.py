@@ -45,7 +45,7 @@ class UpdateError(Exception):
         self.en = en
 
 
-def parse_version(v: str) -> tuple[int, ...]:
+def parse_version(v: object) -> tuple[int, ...]:
     """Extract numeric components from a SemVer string (e.g. 'v2.1.0' -> (2, 1, 0))."""
     if not isinstance(v, str):
         return (0,)
