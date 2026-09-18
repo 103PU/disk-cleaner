@@ -66,3 +66,22 @@ jobs:
             dist/*.zip
             dist/SHA256SUMS.txt
           generate_release_notes: true
+          body: |
+            ## 🚀 Disk CleanUp ${{ github.ref_name }} - Official Release
+
+            Windows 64-bit disk reclamation utility and multi-volume storage analyzer.
+
+            ### 📥 Download Options (Tải về sử dụng)
+
+            | File | Description | Type |
+            | --- | --- | --- |
+            | 💾 **DiskCleanUp-Setup-2.0.0-x64.exe** | **Windows Installer (Khuyên dùng)** — Cài đặt tự động, tạo shortcut Desktop & Start Menu | `.exe` (~13 MB) |
+            | 📦 **DiskCleanUp-${{ github.ref_name }}-windows-x64-portable.zip** | **Portable Edition** — Giải nén toàn bộ thư mục và chạy ngay `DiskCleanUp.exe` | `.zip` (~16 MB) |
+            | 🔒 **SHA256SUMS.txt** | Checksum kiểm tra tính toàn vẹn file | `.txt` |
+
+            ---
+
+            > ⚠️ **LƯU Ý QUAN TRỌNG CHO NGƯỜI DÙNG:**
+            > - Hãy tải file **`DiskCleanUp-Setup-2.0.0-x64.exe`** (hoặc bản Portable `.zip`) ở danh sách **Assets** bên dưới để sử dụng.
+            > - **KHÔNG** tải bằng nút `Source code (zip)` vì đó chỉ là mã nguồn dành cho lập trình viên, không chứa file thực thi `.exe`.
+            > - Nếu dùng bản Portable, hãy giải nén toàn bộ thư mục (Extract All) trước khi chạy `DiskCleanUp.exe`.

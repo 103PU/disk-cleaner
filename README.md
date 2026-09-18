@@ -41,24 +41,32 @@ Modern software engineering environments, AI agent frameworks, container runtime
 
 ## 🚀 Installation & Quick Start
 
+> [!IMPORTANT]
+> **End-User Download Guide:** If you want to use the desktop application, do **NOT** download via the green `<> Code -> Download ZIP` button on the repo homepage (that downloads raw source code, not the executable).  
+> Instead, download the compiled Windows binaries directly below or from [**GitHub Releases**](https://github.com/103PU/disk-cleaner/releases/latest):
+>
+> | Distribution | Direct Download Link | Size | Description |
+> | :--- | :--- | :--- | :--- |
+> | 💾 **Windows Installer** | [**`DiskCleanUp-Setup-2.0.0-x64.exe`**](https://github.com/103PU/disk-cleaner/releases/download/v2.0.0/DiskCleanUp-Setup-2.0.0-x64.exe) | ~13 MB | **Recommended.** Automated wizard, Desktop & Start Menu shortcuts |
+> | 📦 **Portable Edition** | [**`DiskCleanUp-v2.0.0-windows-x64-portable.zip`**](https://github.com/103PU/disk-cleaner/releases/download/v2.0.0/DiskCleanUp-v2.0.0-windows-x64-portable.zip) | ~16 MB | Standalone folder, no install needed. Extract all & run |
+> | 🔒 **Checksums** | [**`SHA256SUMS.txt`**](https://github.com/103PU/disk-cleaner/releases/download/v2.0.0/SHA256SUMS.txt) | <1 KB | SHA-256 integrity verification |
+
 ### Option 1: Standard Windows Installer (Recommended)
 Download and run the official 64-bit setup executable from [GitHub Releases](https://github.com/103PU/disk-cleaner/releases/latest):
-```text
-DiskCleanUp-Setup-2.0.0-x64.exe (~13 MB)
-```
+- [**`DiskCleanUp-Setup-2.0.0-x64.exe`**](https://github.com/103PU/disk-cleaner/releases/download/v2.0.0/DiskCleanUp-Setup-2.0.0-x64.exe)
 - Installs to `%ProgramFiles%\Disk CleanUp` (or per-user directory for non-admin accounts).
 - Automatically verifies Microsoft Edge WebView2 Runtime availability.
-- Creates clean Start Menu shortcuts and uninstaller with diagnostic log preservation options.
+- Creates clean Start Menu & Desktop shortcuts and uninstaller with diagnostic log preservation options.
 
 ### Option 2: Standalone Portable Bundle
 Download the standalone archive from [GitHub Releases](https://github.com/103PU/disk-cleaner/releases/latest):
-```text
-DiskCleanUp-v2.0.0-windows-x64-portable.zip (~31 MB)
-```
-Extract and launch directly:
+- [**`DiskCleanUp-v2.0.0-windows-x64-portable.zip`**](https://github.com/103PU/disk-cleaner/releases/download/v2.0.0/DiskCleanUp-v2.0.0-windows-x64-portable.zip)
+- Right-click and choose **Extract All** (extract the entire folder).
+- Open the extracted folder and launch:
 ```cmd
 DiskCleanUp\DiskCleanUp.exe
 ```
+*(Note: Do not run `DiskCleanUp.exe` directly from inside the `.zip` archive without extracting, as Windows will fail to load the required dependencies inside `_internal/`.)*
 
 ### Option 3: Run from Source (Development Mode)
 Prerequisites: **Windows 10/11 x64**, **Python 3.12**, and **[uv](https://github.com/astral-sh/uv)**.

@@ -80,6 +80,25 @@ $BundleSizeBytes = (Get-ChildItem -Path "dist/DiskCleanUp" -Recurse | Measure-Ob
 $BundleSizeMB = [math]::Round($BundleSizeBytes / 1MB, 2)
 Write-Host "  Bundle size: $BundleSizeMB MB (target <= 60 MB)" -ForegroundColor Green
 
+# Generate HOW-TO-RUN.txt guide inside the bundle
+@"
+============================================================
+  Disk CleanUp - Windows x64 Portable Edition
+============================================================
+
+HOW TO RUN:
+1. Extract ALL files from this archive to a folder on your computer.
+2. Open the extracted folder and double-click "DiskCleanUp.exe".
+
+IMPORTANT:
+- Do NOT run DiskCleanUp.exe directly inside the ZIP without extracting!
+  Windows will fail to load the required library files in "_internal/".
+- Do NOT move DiskCleanUp.exe out of its folder without the "_internal/" directory.
+
+REQUIREMENTS:
+- Windows 10 (version 19044+) or Windows 11 (64-bit).
+- Microsoft Edge WebView2 Runtime (pre-installed on Windows 10/11).
+"@ | Set-Content -Path "dist/DiskCleanUp/HOW-TO-RUN.txt" -Encoding utf8
 
 # Self-check verify
 Write-Host "  Running --self-check on built binary..." -ForegroundColor Gray
