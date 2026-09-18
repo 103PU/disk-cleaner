@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag name (e.g. v2.1.0)'
+        required: true
+        default: 'v2.1.0'
 
 permissions:
   contents: write
@@ -45,7 +51,8 @@ jobs:
       - name: Package portable ZIP and update checksums
         shell: pwsh
         run: |
-          $Tag = $env:GITHUB_REF_NAME
+          $Tag = if ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME } else { "${{ github.event.inputs.tag }}" }
+          if (-not $Tag) { $Tag = "v2.1.0" }
           $ZipName = "DiskCleanUp-$Tag-windows-x64-portable.zip"
           Compress-Archive -Path "dist/DiskCleanUp" -DestinationPath "dist/$ZipName" -Force
           
@@ -61,27 +68,34 @@ jobs:
       - name: Create GitHub Release and upload assets
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          name: Disk CleanUp ${{ github.event.inputs.tag || github.ref_name }}
           files: |
             dist/*.exe
             dist/*.zip
             dist/SHA256SUMS.txt
           generate_release_notes: true
           body: |
-            ## 🚀 Disk CleanUp ${{ github.ref_name }} - Official Release
+            ## 🚀 Disk CleanUp ${{ github.event.inputs.tag || github.ref_name }} - Official Release
 
             Windows 64-bit disk reclamation utility and multi-volume storage analyzer.
+
+            ### ✨ What's New in this Release:
+            - **⏰ Automated Schedule**: Tự động dọn dẹp định kỳ an toàn theo lịch Windows Task Scheduler.
+            - **🚀 In-App Auto Updater**: Tự động kiểm tra bản phát hành mới từ GitHub, hỗ trợ tải trực tiếp và cài đặt nâng cấp ngay trong ứng dụng.
+            - **🛡️ Quality & Performance**: Tối ưu hóa engine quét, vá lỗi typecheck và hoàn thiện giao diện WebView2 mượt mà.
 
             ### 📥 Download Options (Tải về sử dụng)
 
             | File | Description | Type |
             | --- | --- | --- |
-            | 💾 **DiskCleanUp-Setup-2.0.0-x64.exe** | **Windows Installer (Khuyên dùng)** — Cài đặt tự động, tạo shortcut Desktop & Start Menu | `.exe` (~13 MB) |
-            | 📦 **DiskCleanUp-${{ github.ref_name }}-windows-x64-portable.zip** | **Portable Edition** — Giải nén toàn bộ thư mục và chạy ngay `DiskCleanUp.exe` | `.zip` (~16 MB) |
+            | 💾 **Windows Installer (Khuyên dùng)** | File cài đặt tự động (`DiskCleanUp-Setup-*-x64.exe`), tạo shortcut Desktop & Start Menu | `.exe` (~13 MB) |
+            | 📦 **Portable Edition** | File nén (`DiskCleanUp-*-windows-x64-portable.zip`) — Giải nén toàn bộ thư mục và chạy ngay `DiskCleanUp.exe` | `.zip` (~16 MB) |
             | 🔒 **SHA256SUMS.txt** | Checksum kiểm tra tính toàn vẹn file | `.txt` |
 
             ---
 
             > ⚠️ **LƯU Ý QUAN TRỌNG CHO NGƯỜI DÙNG:**
-            > - Hãy tải file **`DiskCleanUp-Setup-2.0.0-x64.exe`** (hoặc bản Portable `.zip`) ở danh sách **Assets** bên dưới để sử dụng.
+            > - Hãy tải file **`DiskCleanUp-Setup-*-x64.exe`** (hoặc bản Portable `.zip`) ở danh sách **Assets** bên dưới để sử dụng.
             > - **KHÔNG** tải bằng nút `Source code (zip)` vì đó chỉ là mã nguồn dành cho lập trình viên, không chứa file thực thi `.exe`.
             > - Nếu dùng bản Portable, hãy giải nén toàn bộ thư mục (Extract All) trước khi chạy `DiskCleanUp.exe`.

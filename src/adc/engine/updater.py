@@ -27,7 +27,7 @@ from adc.engine import paths
 
 _log = logging.getLogger(__name__)
 
-APP_VERSION: Final = "2.0.0"
+APP_VERSION: Final = "2.1.0"
 
 DEFAULT_REPO: Final = "103PU/disk-cleaner"
 GITHUB_API_LATEST: Final = "https://api.github.com/repos/{repo}/releases/latest"

@@ -47,20 +47,20 @@ Modern software engineering environments, AI agent frameworks, container runtime
 >
 > | Distribution | Direct Download Link | Size | Description |
 > | :--- | :--- | :--- | :--- |
-> | 💾 **Windows Installer** | [**`DiskCleanUp-Setup-2.0.0-x64.exe`**](https://github.com/103PU/disk-cleaner/releases/download/v2.0.0/DiskCleanUp-Setup-2.0.0-x64.exe) | ~13 MB | **Recommended.** Automated wizard, Desktop & Start Menu shortcuts |
-> | 📦 **Portable Edition** | [**`DiskCleanUp-v2.0.0-windows-x64-portable.zip`**](https://github.com/103PU/disk-cleaner/releases/download/v2.0.0/DiskCleanUp-v2.0.0-windows-x64-portable.zip) | ~16 MB | Standalone folder, no install needed. Extract all & run |
-> | 🔒 **Checksums** | [**`SHA256SUMS.txt`**](https://github.com/103PU/disk-cleaner/releases/download/v2.0.0/SHA256SUMS.txt) | <1 KB | SHA-256 integrity verification |
+> | 💾 **Windows Installer** | [**`DiskCleanUp-Setup-2.1.0-x64.exe`**](https://github.com/103PU/disk-cleaner/releases/download/v2.1.0/DiskCleanUp-Setup-2.1.0-x64.exe) | ~13 MB | **Recommended.** Automated wizard, Desktop & Start Menu shortcuts |
+> | 📦 **Portable Edition** | [**`DiskCleanUp-v2.1.0-windows-x64-portable.zip`**](https://github.com/103PU/disk-cleaner/releases/download/v2.1.0/DiskCleanUp-v2.1.0-windows-x64-portable.zip) | ~16 MB | Standalone folder, no install needed. Extract all & run |
+> | 🔒 **Checksums** | [**`SHA256SUMS.txt`**](https://github.com/103PU/disk-cleaner/releases/download/v2.1.0/SHA256SUMS.txt) | <1 KB | SHA-256 integrity verification |
 
 ### Option 1: Standard Windows Installer (Recommended)
 Download and run the official 64-bit setup executable from [GitHub Releases](https://github.com/103PU/disk-cleaner/releases/latest):
-- [**`DiskCleanUp-Setup-2.0.0-x64.exe`**](https://github.com/103PU/disk-cleaner/releases/download/v2.0.0/DiskCleanUp-Setup-2.0.0-x64.exe)
+- [**`DiskCleanUp-Setup-2.1.0-x64.exe`**](https://github.com/103PU/disk-cleaner/releases/download/v2.1.0/DiskCleanUp-Setup-2.1.0-x64.exe)
 - Installs to `%ProgramFiles%\Disk CleanUp` (or per-user directory for non-admin accounts).
 - Automatically verifies Microsoft Edge WebView2 Runtime availability.
 - Creates clean Start Menu & Desktop shortcuts and uninstaller with diagnostic log preservation options.
 
 ### Option 2: Standalone Portable Bundle
 Download the standalone archive from [GitHub Releases](https://github.com/103PU/disk-cleaner/releases/latest):
-- [**`DiskCleanUp-v2.0.0-windows-x64-portable.zip`**](https://github.com/103PU/disk-cleaner/releases/download/v2.0.0/DiskCleanUp-v2.0.0-windows-x64-portable.zip)
+- [**`DiskCleanUp-v2.1.0-windows-x64-portable.zip`**](https://github.com/103PU/disk-cleaner/releases/download/v2.1.0/DiskCleanUp-v2.1.0-windows-x64-portable.zip)
 - Right-click and choose **Extract All** (extract the entire folder).
 - Open the extracted folder and launch:
 ```cmd
@@ -232,7 +232,7 @@ pwsh -File build.ps1 -Clean
 
 Artifacts are output to:
 - `dist/DiskCleanUp/` (Standalone executable bundle, ~31 MB)
-- `dist/DiskCleanUp-Setup-2.0.0-x64.exe` (Windows Installer, ~13 MB)
+- `dist/DiskCleanUp-Setup-2.1.0-x64.exe` (Windows Installer, ~13 MB)
 - `dist/SHA256SUMS.txt` (SHA-256 integrity signatures)
 
 ---

@@ -121,7 +121,8 @@ if (-not $SkipInstaller) {
 
     if ($IsccPath -and (Test-Path "build/installer.iss")) {
         Write-Host "  Using ISCC: $IsccPath"
-        & $IsccPath "build/installer.iss"
+        $AppVersion = (Get-Content "pyproject.toml" | Select-String '^version\s*=\s*"([^"]+)"').Matches.Groups[1].Value
+        & $IsccPath "/DMyAppVersion=$AppVersion" "build/installer.iss"
         if ($LASTEXITCODE -eq 0) {
             # Compute SHA256
             $InstallerFile = Get-ChildItem -Path "dist" -Filter "*.exe" | Where-Object { $_.Name -like "*Setup*" } | Select-Object -First 1

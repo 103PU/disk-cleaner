@@ -1,8 +1,10 @@
-; Inno Setup 6 Script for Disk CleanUp v2.0
+; Inno Setup 6 Script for Disk CleanUp
 ; docs/02-SPEC.md 9.2 & docs/03-PLAN.md P7
 
+#ifndef MyAppVersion
+#define MyAppVersion "2.1.0"
+#endif
 #define MyAppName "Disk CleanUp"
-#define MyAppVersion "2.0.0"
 #define MyAppPublisher "Antigravity"
 #define MyAppExeName "DiskCleanUp.exe"
 #define MyAppId "{{A57E5779-1B6E-4CF6-896F-92DFEE26992F}}"
@@ -28,7 +30,7 @@ WizardStyle=modern
 Compression=lzma2/max
 SolidCompression=yes
 OutputDir=..\dist
-OutputBaseFilename=DiskCleanUp-Setup-2.0.0-x64
+OutputBaseFilename=DiskCleanUp-Setup-{#MyAppVersion}-x64
 DisableDirPage=no
 DisableProgramGroupPage=yes
 
