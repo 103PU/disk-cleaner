@@ -50,7 +50,7 @@ MIN_SIZE: Final = (1024, 700)
 
 #: SPEC 4.1's ``--bg-color``. Set on the native window as well as in the page, so
 #: the frame does not flash white for the frame or two before the first paint.
-BACKGROUND: Final = "#0b0813"
+BACKGROUND: Final = "#f8f9fc"
 
 #: How long a ``--relaunched`` process waits for the mutex the unelevated process
 #: is still holding. Two seconds is far more than the handoff needs and still
