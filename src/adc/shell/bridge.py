@@ -400,6 +400,7 @@ class Bridge:
         actions: ActionStore | None = None,
         vss_runner: vss.Runner | None = None,
         on_relaunch: Callable[[], None] | None = None,
+        on_pick_folder: Callable[[str], str | None] | None = None,
     ) -> None:
         self._runner = runner or JobRunner()
         self._store = store or plan_store()
@@ -416,6 +417,7 @@ class Bridge:
         # Set by the window to its own close, so the bridge can ask for a
         # shutdown after a successful elevation without importing ``webview``.
         self._on_relaunch = on_relaunch
+        self._on_pick_folder = on_pick_folder
         self._lock = threading.Lock()
         self._scans: dict[str, scanner.ScanRun] = {}
         self._plans: dict[str, Plan] = {}
@@ -1032,6 +1034,25 @@ class Bridge:
             "top_rows": sweeper.TOP_ROWS,
             "max_selection": sweeper.MAX_PLAN_ITEMS,
         }
+
+    @guarded
+    def pick_folder(self, initial: object = None) -> dict[str, Any]:
+        """Open a native Windows directory picker dialog and return the chosen path."""
+        initial_dir = ""
+        if isinstance(initial, str) and initial.strip():
+            p = Path(initial.strip())
+            if p.is_dir():
+                initial_dir = str(p)
+
+        if self._on_pick_folder is not None:
+            try:
+                chosen = self._on_pick_folder(initial_dir)
+                if chosen:
+                    return {"path": chosen}
+            except Exception as exc:
+                _log.warning("pick_folder failed: %s", exc)
+
+        return {"path": None}
 
     @guarded
     def sweep_start(self, root: object = None, min_age_days: object = None) -> dict[str, Any]:

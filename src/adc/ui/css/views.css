@@ -463,17 +463,19 @@
  */
 .clean__footer {
   position: sticky;
-  bottom: 0;
+  bottom: var(--sp-4);
   z-index: 10;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--sp-3) var(--sp-4);
-  margin-top: var(--sp-5);
-  padding: var(--sp-4) var(--sp-5);
+  gap: var(--sp-2) var(--sp-4);
+  margin: var(--sp-4) auto var(--sp-2) auto;
+  max-width: 680px;
+  padding: var(--sp-2) var(--sp-5);
   background: var(--surface-1);
   border: 1px solid var(--panel-border);
-  border-radius: var(--r-lg);
+  border-radius: var(--r-pill);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.22);
 }
 
 /* Row one is the figures and the buttons, and the bar spans both columns underneath. The
@@ -497,7 +499,7 @@
    not drift while the walk reports. */
 .clean__count {
   color: var(--text-muted);
-  font-size: var(--fs-md);
+  font-size: var(--fs-sm);
 }
 
 /* Deliberately the same shape as a category subtotal: these are the two figures the user
@@ -511,8 +513,8 @@
 }
 
 .clean__total-label {
-  color: var(--text-muted);
-  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
 }
 
 /*
@@ -527,7 +529,7 @@
  * tall as the number that replaces it and the bar does not jump when the scan first reports.
  */
 .clean__total-value .size {
-  font-size: var(--fs-xl);
+  font-size: var(--fs-lg);
 }
 
 /*

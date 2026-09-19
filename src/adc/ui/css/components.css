@@ -194,13 +194,14 @@
   display: inline-flex;
   align-items: center;
   gap: var(--sp-1);
-  padding: var(--sp-1) var(--sp-2);
+  padding: 2px var(--sp-2);
   border: 1px solid currentColor;
   border-radius: var(--r-pill);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-xs);
   font-weight: 600;
+  background: var(--surface-2);
 }
-.risk__ico { width: var(--fs-md); height: var(--fs-md); }
+.risk__ico { width: var(--fs-sm); height: var(--fs-sm); }
 /* The tier label is two words in Vietnamese ("Can can nhac"); it breaks between badges,
    never inside one. */
 .risk__text { white-space: nowrap; }
@@ -209,7 +210,7 @@
    survives a greyscale print and a forced-colors theme, where a hue and a fill do not. */
 .risk--safe { color: var(--risk-safe); }
 .risk--rebuildable { color: var(--risk-rebuildable); border-style: dashed; }
-.risk--caution { color: var(--risk-caution); border-width: 2px; }
+.risk--caution { color: var(--risk-caution); border-width: 1.5px; }
 .risk--dangerous { background: var(--danger-deep); border-color: var(--danger); color: var(--text-main); }
 /* The fold-to-unknown arm of ui.js:241 -- a tier the engine grew after this build
    shipped. Dotted and grey says "unranked", which is the honest reading. */
@@ -217,7 +218,7 @@
 
 /* Compact shrinks the badge, it never drops the word: one per row, 49 rows
    (clean.js:209). */
-.risk--compact { padding: 0 var(--sp-1); font-size: var(--fs-xs); }
+.risk--compact { padding: 2px var(--sp-2); font-size: var(--fs-xs); }
 .risk--compact .risk__ico { width: var(--fs-sm); height: var(--fs-sm); }
 
 /* --- size readout ------------------------------------------------------------- */
@@ -241,20 +242,20 @@
   display: inline-flex;
   align-items: center;
   gap: var(--sp-1);
-  padding: var(--sp-1) var(--sp-2);
+  padding: 1px 6px;
   border: 1px solid var(--panel-border);
   border-radius: var(--r-pill);
-  background: var(--surface-2);
-  color: var(--text-muted);
-  font-size: var(--fs-xs);
+  background: var(--surface-1);
+  color: var(--text-dim);
+  font-size: 11px;
 }
-.tag__ico { width: var(--fs-xs); height: var(--fs-xs); }
+.tag__ico { width: 11px; height: 11px; }
 .tag--info { border-color: var(--secondary); color: var(--secondary); }
 .tag--success { border-color: var(--success); color: var(--success); }
 /* These two also take weight: warn is the gate ("needs Administrator") and danger is
    the point of no return ("irreversible"). Weight reads with the colour removed. */
-.tag--warn { border-color: var(--warning); color: var(--warning); font-weight: 600; }
-.tag--danger { border-color: var(--danger); color: var(--danger-text); font-weight: 600; }
+.tag--warn { border-color: var(--warning); color: var(--warning); font-weight: 500; }
+.tag--danger { border-color: var(--danger); color: var(--danger); font-weight: 500; }
 /* --- target row --------------------------------------------------------------- */
 
 /*
@@ -288,7 +289,17 @@
 .trow__box { width: var(--sp-5); height: var(--sp-5); margin-top: var(--sp-1); accent-color: var(--primary); cursor: pointer; }
 .trow__main { display: grid; gap: var(--sp-1); min-width: 0; }
 .trow__name { font-size: var(--fs-base); font-weight: 600; overflow-wrap: anywhere; cursor: pointer; }
-.trow__desc { color: var(--text-muted); font-size: var(--fs-sm); }
+.trow__desc {
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 65ch;
+}
 .trow__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1) var(--sp-2); }
 /* Why the engine will skip this row (ui.js:334). Amber, not red: a missing permission is
    a condition, not a failure. */
@@ -369,24 +380,26 @@
 .chip {
   display: inline-flex;
   align-items: center;
-  min-height: var(--tap);
-  padding: 0 var(--sp-3);
-  border: 1px solid var(--panel-border);
+  min-height: 24px;
+  height: 26px;
+  padding: 0 var(--sp-2);
+  border: 1px solid transparent;
   border-radius: var(--r-pill);
   background: transparent;
   color: var(--text-muted);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-xs);
+  font-weight: 500;
   transition: background-color var(--dur-fast) var(--ease),
               color var(--dur-fast) var(--ease),
               transform var(--dur-fast) var(--ease);
 }
-.chip:hover { background: var(--surface-2); color: var(--text-main); }
-.chip:active { transform: translateY(1px); }
+.chip:hover { background: var(--surface-3); color: var(--text-main); }
+.chip:active { transform: scale(0.96); }
 /* Pressed is a FILL, not a hue: aria-pressed carries the state for a screen reader
    (ui.js:466) and the luminance jump carries it in greyscale, so it survives both. The
    :hover pair below has to exist because .chip:hover at (0,2,0) would otherwise beat
    this rule and un-press the chip under the pointer. */
-.chip--on { background: var(--primary-deep); border-color: var(--primary-text); color: var(--text-main); }
+.chip--on { background: var(--primary-deep); border-color: var(--primary-text); color: var(--text-main); font-weight: 600; }
 .chip--on:hover { background: var(--primary); color: var(--bg-color); }
 /* --- log pane ----------------------------------------------------------------- */
 
@@ -420,7 +433,15 @@
   padding: 0 var(--sp-4) var(--sp-3);
   border-bottom: 1px solid var(--hairline);
 }
-.log__filters { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
+.log__filters {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--surface-2);
+  padding: 2px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--panel-border);
+}
 .log__tools { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-left: auto; }
 .log__list {
   flex: 1 1 auto;
@@ -959,3 +980,21 @@
   width: 1.5rem;
   height: 1.5rem;
 }
+
+/* Scanning Pulse Effect */
+@keyframes scanRadarPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(37, 99, 235, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+  }
+}
+
+.is-scanning {
+  animation: scanRadarPulse 1.8s infinite ease-out;
+}
+

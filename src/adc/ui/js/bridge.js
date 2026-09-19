@@ -275,6 +275,7 @@
        `minAgeDays` is checked with typeof rather than `||`, because 0 is a real
        answer -- "no age filter" -- and `0 || null` would silently turn it into the
        thirty-day default. */
+    pickFolder: function (initial) { return call('pick_folder', initial || null); },
     sweepDefaults: function () { return call('sweep_defaults'); },
     sweepStart: function (root, minAgeDays) {
       return call('sweep_start', root || null,

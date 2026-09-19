@@ -150,6 +150,18 @@ def _shutdown() -> None:
         window.destroy()
 
 
+def _pick_folder(initial_dir: str) -> str | None:
+    """Open a native folder dialog on the main window."""
+    windows = list(webview.windows)
+    if windows:
+        chosen = windows[0].create_file_dialog(
+            webview.FOLDER_DIALOG, directory=initial_dir
+        )
+        if chosen and len(chosen) > 0 and chosen[0]:
+            return str(chosen[0])
+    return None
+
+
 def self_check() -> dict[str, Any]:
     """What P3's acceptance asks for, without opening a window.
 
@@ -199,7 +211,7 @@ def run(*, relaunched: bool = False, debug: bool = False) -> int:
             # Refuse rather than open a window with a listening socket behind it.
             # The whole SEC-01..03 class came from having one.
             raise RuntimeError(f"refusing to open: {url} would start an HTTP server")
-        bridge = Bridge(on_relaunch=_shutdown)
+        bridge = Bridge(on_relaunch=_shutdown, on_pick_folder=_pick_folder)
         webview.create_window(
             WINDOW_TITLE,
             url=url,

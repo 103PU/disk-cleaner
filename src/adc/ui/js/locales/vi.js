@@ -46,11 +46,11 @@ window.ADC.locales.vi = {
   'clean.preset.none': 'Bỏ chọn hết',
   'clean.preset.safe': 'Bộ an toàn',
   /* Nút, nhãn tiến trình và các thông báo một lượt chạy để lại. */
-  'clean.preview': 'Chạy thử rồi dọn',
-  'clean.previewing': 'Đang chạy thử, chưa xoá gì',
+  'clean.preview': 'Dọn dẹp',
+  'clean.previewing': 'Đang kiểm tra, chưa xoá gì',
   'clean.reveal': 'Mở thư mục trong Explorer',
   'clean.revealed': 'Đã mở thư mục trong Explorer.',
-  'clean.scan': 'Quét dung lượng',
+  'clean.scan': 'Quét',
   'clean.scan_done': 'Quét xong. Tổng dung lượng đo được: {size}.',
   'clean.scan_failed': 'Quét thất bại. Những dung lượng đã đo xong vẫn hiện trong danh sách.',
   /* Số mục đã chọn, qua tn(): tiếng Việt không chia số nên hai nhánh giống nhau từng chữ. */
@@ -94,8 +94,8 @@ window.ADC.locales.vi = {
   'unit.minute': 'phút',
   'unit.second': 'giây',
   /* Chip trạng thái trên một dòng mục, lấy thẳng từ cờ của danh mục. */
-  'tag.admin': 'Cần quyền quản trị',
-  'tag.irreversible': 'Không hoàn tác được',
+  'tag.admin': 'Cần Admin',
+  'tag.irreversible': 'Không hoàn tác',
   'tag.standalone': 'Không dọn theo lô',
   /* --- slice b: history kind state log --- */
   /* History -- the receipts: the run list, one run in full, and the live free-space strip. */
@@ -424,12 +424,11 @@ window.ADC.locales.vi = {
   'projects.root': 'Thư mục gốc',
   'projects.root.hint': 'Thư mục chứa các dự án',
   'projects.root.empty': 'Bạn phải nhập thư mục gốc',
+  'projects.browse': 'Chọn thư mục',
   'projects.age': 'Mốc thời gian',
   'projects.age.hint': 'Ngưỡng thời gian bỏ không',
   'projects.age.unit': 'ngày',
   'projects.scan': 'Bắt đầu quét',
-  'projects.stop': 'Dừng',
-  'projects.refresh': 'Tải lại',
   'projects.starting': 'Đang bắt đầu...',
   'projects.stopping': 'Đang dừng...',
   'projects.busy': 'Đang có tác vụ khác chạy: {kind}',

@@ -46,11 +46,11 @@ window.ADC.locales.en = {
   'clean.preset.none': 'Clear selection',
   'clean.preset.safe': 'Safe preset',
   /* Nút, nhãn tiến trình và các thông báo một lượt chạy để lại. */
-  'clean.preview': 'Preview, then clean',
-  'clean.previewing': 'Dry run in progress, nothing deleted yet',
+  'clean.preview': 'Clean Up',
+  'clean.previewing': 'Checking targets, nothing deleted yet',
   'clean.reveal': 'Open the folder in Explorer',
   'clean.revealed': 'Opened the folder in Explorer.',
-  'clean.scan': 'Scan sizes',
+  'clean.scan': 'Scan',
   'clean.scan_done': 'Scan finished. Measured total: {size}.',
   'clean.scan_failed': 'The scan failed. Sizes already measured are still shown in the list.',
   /* Số mục đã chọn, qua tn(): tiếng Việt không chia số nên hai nhánh giống nhau từng chữ. */
@@ -94,8 +94,8 @@ window.ADC.locales.en = {
   'unit.minute': 'min',
   'unit.second': 's',
   /* Chip trạng thái trên một dòng mục, lấy thẳng từ cờ của danh mục. */
-  'tag.admin': 'Needs Administrator',
-  'tag.irreversible': 'Cannot be undone',
+  'tag.admin': 'Admin required',
+  'tag.irreversible': 'Irreversible',
   'tag.standalone': 'Not in a bulk clean',
   /* --- slice b: history kind state log --- */
   /* History -- the receipts: the run list, one run in full, and the live free-space strip. */
@@ -424,12 +424,11 @@ window.ADC.locales.en = {
   'projects.root': 'Root folder',
   'projects.root.hint': 'Folder containing your projects',
   'projects.root.empty': 'Please provide a root folder',
+  'projects.browse': 'Browse',
   'projects.age': 'Age filter',
   'projects.age.hint': 'Idle time threshold',
   'projects.age.unit': 'days',
   'projects.scan': 'Start scan',
-  'projects.stop': 'Stop scan',
-  'projects.refresh': 'Refresh',
   'projects.starting': 'Starting...',
   'projects.stopping': 'Stopping...',
   'projects.busy': 'Another job is running: {kind}',

@@ -347,8 +347,8 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-4);
-  min-height: calc(var(--tap) * 1.5);
-  padding: var(--sp-3) var(--sp-6);
+  min-height: calc(var(--tap) * 1.25);
+  padding: var(--sp-2) var(--sp-6);
   background: var(--panel-bg);
   border-bottom: 1px solid var(--panel-border);
 }
@@ -365,10 +365,7 @@
 }
 
 .topbar__sub {
-  margin-top: 2px;
-  color: var(--text-muted);
-  font-size: var(--fs-sm);
-  overflow-wrap: anywhere;
+  display: none;
 }
 
 /* Each view appends its own buttons here and app.js:237 clears them on every switch,

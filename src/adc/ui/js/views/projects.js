@@ -107,16 +107,41 @@
       ui.field({ i18n: 'projects.age', control: ageWrap, id: 'ps-age' })
     ]);
 
-    var scanBtn = ui.btn({ i18n: 'projects.scan', variant: 'primary', on: { click: startScan } });
-    var stopBtn = ui.btn({ i18n: 'projects.stop', variant: 'ghost', disabled: true, on: { click: stopRun } });
-    var refreshBtn = ui.btn({ i18n: 'projects.refresh', variant: 'ghost', disabled: true, on: { click: startScan } });
+    var browseBtn = ui.btn({
+      icon: 'icon-folder',
+      i18n: 'projects.browse',
+      variant: 'ghost',
+      on: {
+        click: function () {
+          api.pickFolder(rootInput.value).then(function (res) {
+            if (res && res.path) {
+              rootInput.value = res.path;
+            }
+          }).catch(ui.showError);
+        }
+      }
+    });
+
+    var scanToggleBtn = ui.btn({
+      icon: 'icon-search',
+      i18n: 'projects.scan',
+      variant: 'primary',
+      on: {
+        click: function () {
+          if (phase === SCANNING || phase === DELETING) {
+            stopRun();
+          } else {
+            startScan();
+          }
+        }
+      }
+    });
 
     var controls = ui.el('div', { class: 'ps__controls' }, [
       rootBox,
       ageBox,
-      scanBtn,
-      stopBtn,
-      refreshBtn
+      browseBtn,
+      scanToggleBtn
     ]);
 
     var progress = ui.progress();
@@ -195,9 +220,8 @@
     dom = {
       root: rootInput,
       age: ageInput,
-      scanBtn: scanBtn,
-      stopBtn: stopBtn,
-      refreshBtn: refreshBtn,
+      browseBtn: browseBtn,
+      scanToggleBtn: scanToggleBtn,
       progress: progress,
       totals: totals,
       catBar: catBar,
@@ -217,12 +241,6 @@
   }
 
   function enter(host, actions) {
-    if (actions) {
-      actions.appendChild(ui.btn({
-        icon: 'icon-refresh', label: 'projects.refresh', variant: 'ghost',
-        on: { click: function () { startScan(); } }
-      }));
-    }
 
     if (!dom.root.value) {
       api.sweepDefaults().then(function (res) {
@@ -370,7 +388,7 @@
 
   function stopRun() {
     if (!watcher) return;
-    dom.stopBtn.disabled = true;
+    dom.scanToggleBtn.disabled = true;
     dom.progress.set(lastPct, i18n.t('projects.stopping'));
     watcher.cancel();
   }
@@ -468,9 +486,22 @@
     var running = phase === SCANNING || phase === DELETING;
     dom.root.disabled = running;
     dom.age.disabled = running;
-    dom.scanBtn.disabled = running;
-    dom.refreshBtn.disabled = running || !head;
-    dom.stopBtn.disabled = !running;
+    dom.browseBtn.disabled = running;
+    dom.scanToggleBtn.disabled = false;
+    ui.clear(dom.scanToggleBtn);
+    if (running) {
+      dom.scanToggleBtn.classList.add('btn--danger');
+      dom.scanToggleBtn.classList.remove('btn--primary');
+      dom.scanToggleBtn.classList.add('is-scanning');
+      dom.scanToggleBtn.appendChild(ui.icon('icon-stop', 'btn__ico'));
+      dom.scanToggleBtn.appendChild(ui.el('span', { i18n: 'action.stop', text: i18n.t('action.stop') }));
+    } else {
+      dom.scanToggleBtn.classList.remove('btn--danger');
+      dom.scanToggleBtn.classList.add('btn--primary');
+      dom.scanToggleBtn.classList.remove('is-scanning');
+      dom.scanToggleBtn.appendChild(ui.icon('icon-search', 'btn__ico'));
+      dom.scanToggleBtn.appendChild(ui.el('span', { i18n: 'projects.scan', text: i18n.t('projects.scan') }));
+    }
     dom.progress.hidden = !running;
 
     var hasLevel = !!level;
