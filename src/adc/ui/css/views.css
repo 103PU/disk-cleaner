@@ -301,8 +301,13 @@
 
 /* --- the category list ---------------------------------------------------------- */
 
-/* One card per category, in the engine's own order (clean.js:306-328). Between the cards
-   only: a trailing margin would stack with the footer's own. */
+.clean__cat {
+  transition: transform var(--dur) var(--spring), box-shadow var(--dur) var(--spring), border-color var(--dur) var(--ease);
+}
+.clean__cat:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
 .clean__cat + .clean__cat {
   margin-top: var(--sp-4);
 }
@@ -1702,6 +1707,11 @@
 
 .sched__card {
   max-width: calc(var(--content-max) * 2 / 3);
+  transition: transform var(--dur) var(--spring), box-shadow var(--dur) var(--spring), border-color var(--dur) var(--ease);
+}
+.sched__card:hover {
+  transform: translateY(-3px) rotate(-0.5deg);
+  box-shadow: var(--shadow-hover);
 }
 
 .sched__fields {

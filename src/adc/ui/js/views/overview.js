@@ -681,8 +681,21 @@
      */
     dom.results = ui.el('div', { class: 'ov__results', attrs: { 'aria-live': 'polite' } });
 
-    var scanCard = ui.card({
+    var disksCard = ui.card({
       class: 'bento-col-7 card--tilted',
+      icon: 'icon-disk',
+      i18n: 'overview.disks.title'
+    });
+    var disksBlock = ui.el('section', { class: 'ov__block', attrs: { 'aria-labelledby': 'ov-disks-title' } }, [
+      ui.el('h2', {
+        class: 'ov__block-title', id: 'ov-disks-title', i18n: 'overview.disks.title', hidden: true
+      }),
+      dom.disks
+    ]);
+    disksCard.body.appendChild(disksBlock);
+
+    var scanCard = ui.card({
+      class: 'bento-col-5 card--tilted',
       icon: 'icon-clean',
       i18n: 'overview.scan.title',
       sub: 'overview.scan.sub'
@@ -693,21 +706,8 @@
       dom.results
     ]);
 
-    var disksCard = ui.card({
-      class: 'bento-col-5',
-      icon: 'icon-disk',
-      i18n: 'overview.disks.title'
-    });
-    var disksBlock = ui.el('section', { class: 'ov__block', attrs: { 'aria-labelledby': 'ov-disks-title' } }, [
-      ui.el('h2', {
-        class: 'ov__block-title', id: 'ov-disks-title', i18n: 'overview.disks.title'
-      }),
-      dom.disks
-    ]);
-    disksCard.body.appendChild(disksBlock);
-
     var goalsCard = ui.card({
-      class: 'bento-col-6',
+      class: 'bento-col-6 card--tilted',
       icon: 'icon-safe',
       i18n: 'overview.goals.title'
     });
@@ -718,7 +718,7 @@
     dom.calContainer.appendChild(createCalendarStrip());
 
     var activityCard = ui.card({
-      class: 'bento-col-6',
+      class: 'bento-col-6 card--tilted',
       icon: 'icon-history',
       i18n: 'overview.last.title',
       sub: 'overview.last.sub'
@@ -756,8 +756,8 @@
     ]);
 
     var bento = ui.el('div', { class: 'bento-grid' }, [
-      scanCard,
       disksCard,
+      scanCard,
       goalsCard,
       activityCard
     ]);

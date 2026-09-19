@@ -105,11 +105,24 @@
   font-weight: 500;
 }
 
+@keyframes pulseDot {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    transform: scale(1.2);
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0);
+  }
+}
+
 .brand__dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--success);
+  display: inline-block;
+  animation: pulseDot 2.5s infinite ease-in-out;
 }
 
 /* --- nav rail ----------------------------------------------------------------- */
@@ -135,7 +148,8 @@
   font-size: var(--fs-md);
   text-align: left;
   transition: background-color var(--dur-fast) var(--ease),
-              color var(--dur-fast) var(--ease);
+              color var(--dur-fast) var(--ease),
+              transform var(--dur-fast) var(--spring);
 }
 
 /* No colour of its own: the icon rides the row's currentColor, so one hover rule
@@ -148,6 +162,7 @@
 .nav__item:hover {
   background: var(--surface-2);
   color: var(--text-main);
+  transform: translateX(3px);
 }
 
 /* Hover recolours, press moves. SPEC 7.4 wants the two distinguishable by more than
@@ -240,10 +255,13 @@
   font-weight: 600;
   border-radius: var(--r-pill);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: transform var(--dur-fast) var(--spring), box-shadow var(--dur-fast) var(--spring);
 }
 .promo__btn:hover {
   background: #f8fafc;
   color: var(--primary-deep);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
 }
 
 /* margin-top:auto is the whole reason this element exists: it holds the admin banner
@@ -298,65 +316,59 @@
    half is figure-ground -- one segment is filled and framed, the other is bare -- so
    it survives being read in one colour. */
 .lang__btn.is-active {
-  background: var(--primary-deep);
+  background: var(--surface-1);
   border-color: var(--primary-text);
   color: var(--text-main);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 /* --- content pane ------------------------------------------------------------- */
 
-/* The only scrollport in the window. The sidebar is a sibling so it cannot move; the
-   topbar is a child and stays by being sticky, which keeps the view title and its
-   actions on screen through five thousand lines of log. The --content-max measure is
-   carried by the two children rather than by a track here, because auto margins on
-   them are what centres it. */
+/* The only thing that scrolls. The layout is a flex column: topbar, separator, pane,
+   so an error banner can push the view down without anything recalculating. */
 .content {
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  height: 100%;
   overflow-y: auto;
   background-color: var(--bg-color);
-  background-image: radial-gradient(var(--border-card) 1px, transparent 1px);
+  background-image: radial-gradient(var(--border-subtle) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
-/* Centred on the same measure as the view below it, so a title and the numbers it
-   labels stay in one column on a 32-inch monitor. The width is stated because auto
-   inline margins switch stretch off, and --content-max then clamps it. Opaque
-   background: the view scrolls underneath this, and --panel-bg would show it. */
+/* Sticky: the view scrolls under it, and the separator at its bottom edge is the line
+   that says what is scrolling. z-index 20 puts it above the view and below the
+   dialog overlay (layout.css:17). */
 .topbar {
   position: sticky;
   top: 0;
   z-index: 20;
   display: flex;
-  flex: none;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
   gap: var(--sp-4);
-  width: 100%;
-  max-width: var(--content-max);
-  margin-inline: auto;
-  padding: var(--sp-5) var(--sp-6) var(--sp-4);
-  background: var(--bg-color);
+  min-height: calc(var(--tap) * 1.5);
+  padding: var(--sp-3) var(--sp-6);
+  background: var(--panel-bg);
   border-bottom: 1px solid var(--panel-border);
 }
 
-/* min-width:0 is what lets a long Vietnamese subtitle wrap instead of pushing the
-   action buttons out of the header. */
 .topbar__left {
+  flex: 1 1 12rem;
   min-width: 0;
 }
 
 .topbar__title {
   font-size: var(--fs-xl);
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.25;
 }
 
 .topbar__sub {
-  margin-top: var(--sp-1);
+  margin-top: 2px;
   color: var(--text-muted);
-  font-size: var(--fs-md);
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
 }
 
 /* Each view appends its own buttons here and app.js:237 clears them on every switch,
@@ -367,6 +379,17 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--sp-2);
+}
+
+@keyframes viewFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* One <section> is visible at a time and the other six carry [hidden], which
@@ -380,6 +403,7 @@
   max-width: var(--content-max);
   margin-inline: auto;
   padding: var(--sp-6) var(--sp-6) var(--sp-10);
+  animation: viewFadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* --- loader ------------------------------------------------------------------- */

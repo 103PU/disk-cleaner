@@ -126,8 +126,12 @@
   min-width: 0;
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow-panel);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--dur) var(--spring), box-shadow var(--dur) var(--spring), border-color var(--dur) var(--ease);
+}
+.card:hover {
+  box-shadow: var(--shadow-hover);
 }
 .card__head {
   display: flex;
@@ -692,13 +696,14 @@
   background: var(--surface-card);
   border: 1px solid var(--border-card);
   border-radius: var(--r-card);
-  box-shadow: var(--shadow-float);
-  transform: rotate(-1deg);
-  transition: transform var(--dur) var(--spring), box-shadow var(--dur) var(--spring);
+  box-shadow: var(--shadow-card);
+  transform: rotate(0deg) translateY(0);
+  transition: transform var(--dur) var(--spring), box-shadow var(--dur) var(--spring), border-color var(--dur) var(--ease);
 }
 .card--tilted:hover {
-  transform: rotate(0deg) translateY(-2px);
+  transform: translateY(-4px) rotate(-0.6deg);
   box-shadow: var(--shadow-hover);
+  border-color: var(--primary-light);
 }
 
 /* Bento Grid System */
@@ -836,11 +841,20 @@
   flex: 1;
   text-align: center;
 }
+@keyframes dayGlow {
+  from {
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+  }
+  to {
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.45);
+  }
+}
 .cal-strip__day--active {
   background: var(--primary);
   color: #ffffff;
   font-weight: 700;
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+  animation: dayGlow 2.5s ease-in-out infinite alternate;
 }
 .cal-strip__day-num {
   font-family: var(--font-mono);
@@ -865,10 +879,11 @@
   background: var(--surface-2);
   border: 1px solid var(--border-subtle);
   border-radius: var(--r-md);
-  transition: transform var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+  transition: transform var(--dur-fast) var(--spring), box-shadow var(--dur-fast) var(--spring), border-color var(--dur-fast) var(--ease);
 }
 .disk-tile:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-sm);
   border-color: var(--primary);
 }
 .disk-tile__head {
@@ -905,6 +920,14 @@
 }
 
 /* Floating Action Button (FAB) */
+@keyframes fabFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
 .fab {
   position: fixed;
   bottom: 2rem;
@@ -921,10 +944,12 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  animation: fabFloat 3.5s ease-in-out infinite;
   transition: transform var(--dur) var(--spring), box-shadow var(--dur) var(--spring);
 }
 .fab:hover {
-  transform: scale(1.08) translateY(-2px);
+  animation: none;
+  transform: scale(1.08) translateY(-3px);
   box-shadow: 0 12px 30px rgba(99, 102, 241, 0.55);
 }
 .fab:active {
