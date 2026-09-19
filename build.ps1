@@ -43,6 +43,9 @@ if ($PythonVersion -notmatch "3\.12\.") {
     Write-Error "ADC requires Python 3.12.x for pythonnet 3.1.0 compatibility. Found: $PythonVersion"
 }
 
+# Stop any running instances that could lock files in dist/
+Get-Process -Name "*DiskCleanUp*", "*DiskCleanUp-Setup*" -ErrorAction SilentlyContinue | Stop-Process -Force
+
 # Clean if requested
 if ($Clean) {
     Write-Host "  Cleaning dist/ and build/temp..." -ForegroundColor Gray
@@ -133,7 +136,8 @@ if (-not $SkipInstaller) {
                 Write-Host "  SHA256: $Hash" -ForegroundColor Green
             }
         } else {
-            Write-Warning "Inno Setup compilation returned exit code $LASTEXITCODE"
+            Get-ChildItem -Path "dist" -Filter "*Setup*.exe" | Remove-Item -Force -ErrorAction SilentlyContinue
+            Write-Error "Inno Setup compilation failed with exit code $LASTEXITCODE"
         }
     } else {
         Write-Host "  Inno Setup not found or build/installer.iss not present." -ForegroundColor DarkGray
