@@ -409,6 +409,13 @@
     }
     dom.adminRelaunch.addEventListener('click', relaunch);
 
+    var promoBtn = byId('promo-schedule-btn');
+    if (promoBtn) {
+      promoBtn.addEventListener('click', function () {
+        go('schedule');
+      });
+    }
+
     /* One listener for the whole app: i18n has already re-applied every [data-i18n] in
        the document by the time this runs, so what is left is the chrome this file
        writes itself and whatever the visible view drew from engine data. */

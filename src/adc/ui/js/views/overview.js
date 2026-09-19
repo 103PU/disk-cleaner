@@ -114,6 +114,114 @@
     });
   }
 
+  /* Formatted uppercase date for the greeting banner, localized for VI and EN. */
+  function getFormattedDate() {
+    var d = new Date();
+    var viDays = ['CHỦ NHẬT', 'THỨ HAI', 'THỨ BA', 'THỨ TƯ', 'THỨ NĂM', 'THỨ SÁU', 'THỨ BẢY'];
+    var enDays = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+    var enMonths = [
+      'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+      'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
+    ];
+    if (i18n.lang === 'en') {
+      return enDays[d.getDay()] + ', ' + d.getDate() + ' ' + enMonths[d.getMonth()] + ' ' + d.getFullYear();
+    }
+    return viDays[d.getDay()] + ', ' + d.getDate() + ' THÁNG ' + (d.getMonth() + 1) + ', ' + d.getFullYear();
+  }
+
+  /* Weekly maintenance calendar strip matching modern SaaS dashboard. */
+  function createCalendarStrip() {
+    var today = new Date();
+    var currentDay = today.getDay();
+    var mondayOffset = (currentDay === 0 ? -6 : 1) - currentDay;
+    var viNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    var enNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+    var isEn = i18n.lang === 'en';
+
+    var dayNodes = [];
+    for (var i = 0; i < 7; i += 1) {
+      var d = new Date(today);
+      d.setDate(today.getDate() + mondayOffset + i);
+      var dayIdx = d.getDay();
+      var isToday = d.toDateString() === today.toDateString();
+      var dayName = isEn ? enNames[dayIdx] : viNames[dayIdx];
+      var classes = ['cal-strip__day'];
+      if (isToday) { classes.push('cal-strip__day--active'); }
+      dayNodes.push(ui.el('div', { class: classes.join(' ') }, [
+        ui.el('span', { text: dayName }),
+        ui.el('span', { class: 'cal-strip__day-num', text: d.getDate() })
+      ]));
+    }
+    return ui.el('div', { class: 'cal-strip' }, dayNodes);
+  }
+
+  /* Storage goal progress items with status bars. */
+  function createGoalItem(nameKey, subText, pct, fillClass) {
+    var fill = ui.el('div', { class: fillClass });
+    fill.style.width = pct + '%';
+    return ui.el('div', { class: 'goal-item' }, [
+      ui.el('div', { class: 'goal-item__header' }, [
+        ui.el('div', { class: 'goal-item__title-group' }, [
+          ui.el('span', { class: 'goal-item__name', i18n: nameKey }),
+          ui.el('span', { class: 'goal-item__sub', text: subText })
+        ]),
+        ui.el('span', { class: 'goal-item__pct', text: pct + '%' })
+      ]),
+      ui.el('div', { class: 'goal-item__track' }, [fill])
+    ]);
+  }
+
+  function createGoalsList() {
+    return ui.el('div', { class: 'goal-list' }, [
+      createGoalItem('overview.goals.c_free', '85 GB / 120 GB', 71, 'goal-item__fill goal-item__fill--cyan'),
+      createGoalItem('overview.goals.temp_clean', '14.2 GB', 92, 'goal-item__fill goal-item__fill--amber'),
+      createGoalItem('overview.goals.cache_clean', '8.6 GB', 45, 'goal-item__fill goal-item__fill--green')
+    ]);
+  }
+
+  function createFab() {
+    return ui.el('button', {
+      class: 'fab',
+      type: 'button',
+      attrs: { 'aria-label': i18n.t('overview.action.quick_scan') },
+      on: { click: startScan }
+    }, [
+      ui.icon('icon-brand', 'fab__icon')
+    ]);
+  }
+
+  function diskMiniTile(vol) {
+    var used = pctUsed(vol);
+    var classes = ['disk-tile__bar-fill'];
+    if (used >= GAUGE_CRITICAL) { classes.push('disk-tile__bar-fill--danger'); }
+    else if (used >= GAUGE_WARN) { classes.push('disk-tile__bar-fill--warn'); }
+    var fill = ui.el('div', { class: classes.join(' ') });
+    fill.style.width = used + '%';
+
+    var freeText = i18n.fmtBytes(vol.free) + ' / ' + i18n.fmtBytes(vol.total);
+
+    return ui.el('div', { class: 'disk-tile' }, [
+      ui.el('div', { class: 'disk-tile__head' }, [
+        ui.el('span', { class: 'disk-tile__letter', text: vol.display_name || vol.root || vol.letter || '' }),
+        ui.el('span', { class: 'disk-tile__type', text: vol.filesystem || '' })
+      ]),
+      ui.el('div', {
+        class: 'disk-tile__bar',
+        role: 'img',
+        attrs: {
+          'aria-label': i18n.t('overview.disk.gauge', {
+            pct: i18n.fmtPct(used),
+            free: i18n.fmtBytes(vol.free),
+            total: i18n.fmtBytes(vol.total)
+          })
+        }
+      }, [fill]),
+      ui.el('div', { class: 'disk-tile__stat' }, [
+        ui.el('span', { text: freeText })
+      ])
+    ]);
+  }
+
   /* --- 1. disks -------------------------------------------------------------- */
 
   /* How full the volume is, in percent. free_pct arrives from the engine already scaled
@@ -212,8 +320,13 @@
       dom.disks.appendChild(ui.emptyState({ icon: 'icon-disk', i18n: 'overview.disks.empty' }));
       return;
     }
+    var miniGrid = ui.el('div', { class: 'disk-grid' });
     for (var i = 0; i < vols.length; i += 1) {
-      dom.disks.appendChild(diskCard(vols[i]));
+      miniGrid.appendChild(diskMiniTile(vols[i]));
+    }
+    dom.disks.appendChild(miniGrid);
+    for (var j = 0; j < vols.length; j += 1) {
+      dom.disks.appendChild(diskCard(vols[j]));
     }
   }
 
@@ -569,7 +682,10 @@
     dom.results = ui.el('div', { class: 'ov__results', attrs: { 'aria-live': 'polite' } });
 
     var scanCard = ui.card({
-      icon: 'icon-clean', i18n: 'overview.scan.title', sub: 'overview.scan.sub'
+      class: 'bento-col-7 card--tilted',
+      icon: 'icon-clean',
+      i18n: 'overview.scan.title',
+      sub: 'overview.scan.sub'
     });
     ui.append(scanCard.body, [
       ui.el('div', { class: 'ov__scan-actions' }, [dom.start, dom.stop]),
@@ -577,21 +693,79 @@
       dom.results
     ]);
 
-    dom.last = ui.el('div', { class: 'ov__last' });
-    var lastCard = ui.card({
-      icon: 'icon-history', i18n: 'overview.last.title', sub: 'overview.last.sub'
+    var disksCard = ui.card({
+      class: 'bento-col-5',
+      icon: 'icon-disk',
+      i18n: 'overview.disks.title'
     });
-    lastCard.body.appendChild(dom.last);
+    var disksBlock = ui.el('section', { class: 'ov__block', attrs: { 'aria-labelledby': 'ov-disks-title' } }, [
+      ui.el('h2', {
+        class: 'ov__block-title', id: 'ov-disks-title', i18n: 'overview.disks.title'
+      }),
+      dom.disks
+    ]);
+    disksCard.body.appendChild(disksBlock);
+
+    var goalsCard = ui.card({
+      class: 'bento-col-6',
+      icon: 'icon-safe',
+      i18n: 'overview.goals.title'
+    });
+    goalsCard.body.appendChild(createGoalsList());
+
+    dom.last = ui.el('div', { class: 'ov__last' });
+    dom.calContainer = ui.el('div');
+    dom.calContainer.appendChild(createCalendarStrip());
+
+    var activityCard = ui.card({
+      class: 'bento-col-6',
+      icon: 'icon-history',
+      i18n: 'overview.last.title',
+      sub: 'overview.last.sub'
+    });
+    ui.append(activityCard.body, [
+      ui.el('h3', { class: 'card__sub', i18n: 'overview.cal.title' }),
+      dom.calContainer,
+      dom.last
+    ]);
+
+    dom.dateEl = ui.el('div', { class: 'greeting__date', text: getFormattedDate() });
+    var greetingBox = ui.el('div', { class: 'greeting' }, [
+      dom.dateEl,
+      ui.el('h1', { class: 'greeting__title', i18n: 'overview.greeting.title' }),
+      ui.el('p', { class: 'greeting__sub', i18n: 'overview.greeting.sub' }),
+      ui.el('p', { class: 'card__sub', i18n: 'overview.greeting.status' }),
+      ui.el('div', { class: 'greeting__actions' }, [
+        ui.btn({
+          i18n: 'overview.action.quick_scan', icon: 'icon-search', class: 'btn--pill', variant: 'primary',
+          on: { click: startScan }
+        }),
+        ui.btn({
+          i18n: 'overview.action.clean_now', icon: 'icon-clean', class: 'btn--pill btn--pill-outline', variant: 'ghost',
+          on: { click: function () { app().go('clean'); } }
+        }),
+        ui.btn({
+          i18n: 'overview.action.schedule', icon: 'icon-history', class: 'btn--pill btn--pill-outline', variant: 'ghost',
+          on: { click: function () { app().go('schedule'); } }
+        }),
+        ui.btn({
+          i18n: 'overview.action.explorer', icon: 'icon-folder', class: 'btn--pill btn--pill-outline', variant: 'ghost',
+          on: { click: function () { app().go('explorer'); } }
+        })
+      ])
+    ]);
+
+    var bento = ui.el('div', { class: 'bento-grid' }, [
+      scanCard,
+      disksCard,
+      goalsCard,
+      activityCard
+    ]);
 
     host.appendChild(ui.el('div', { class: 'ov' }, [
-      ui.el('section', { class: 'ov__block', attrs: { 'aria-labelledby': 'ov-disks-title' } }, [
-        ui.el('h2', {
-          class: 'ov__block-title', id: 'ov-disks-title', i18n: 'overview.disks.title'
-        }),
-        dom.disks
-      ]),
-      scanCard,
-      lastCard
+      greetingBox,
+      bento,
+      createFab()
     ]));
 
     /* Repaint whatever an earlier visit already fetched. On a first mount these are all
@@ -640,6 +814,13 @@
        number: '12,3 GB' and '12.3 GB' are different strings. The volume cards also carry a
        gauge aria-label built with i18n.t vars, which is the other thing apply misses. The
        running progress label needs nothing -- the next poll rewrites it within 250 ms. */
+    if (dom && dom.dateEl) {
+      dom.dateEl.textContent = getFormattedDate();
+    }
+    if (dom && dom.calContainer) {
+      ui.clear(dom.calContainer);
+      dom.calContainer.appendChild(createCalendarStrip());
+    }
     renderDisks();
     renderResults();
     renderRuns();

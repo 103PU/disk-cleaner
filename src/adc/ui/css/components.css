@@ -650,3 +650,287 @@
    no button. It states a fact and then gets out of the way. */
 .admin--ok { border-left-color: var(--success); }
 .admin--ok .admin__head { color: var(--success); }
+
+/* --- modern bento & pill additions (v2.2) -------------------------------------- */
+
+.btn--pill {
+  border-radius: var(--r-pill);
+  padding: var(--sp-2) var(--sp-4);
+  font-weight: 500;
+  min-height: 2.25rem;
+}
+
+.btn--pill-outline {
+  background: var(--surface-card);
+  border: 1px solid var(--border-card);
+  color: var(--text-main);
+  box-shadow: var(--shadow-sm);
+}
+.btn--pill-outline:hover {
+  background: var(--surface-2);
+  border-color: var(--primary);
+  color: var(--primary-text);
+}
+
+.btn--gradient {
+  background: var(--primary-gradient);
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+}
+.btn--gradient:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+}
+.btn--gradient:active {
+  transform: translateY(1px);
+}
+
+.card--tilted {
+  position: relative;
+  background: var(--surface-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-float);
+  transform: rotate(-1deg);
+  transition: transform var(--dur) var(--spring), box-shadow var(--dur) var(--spring);
+}
+.card--tilted:hover {
+  transform: rotate(0deg) translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+/* Bento Grid System */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--sp-5);
+  width: 100%;
+}
+.bento-col-7 { grid-column: span 7; }
+.bento-col-6 { grid-column: span 6; }
+.bento-col-5 { grid-column: span 5; }
+
+@media (max-width: 1080px) {
+  .bento-col-7, .bento-col-6, .bento-col-5 {
+    grid-column: span 12;
+  }
+}
+
+/* Greeting Section */
+.greeting {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-6);
+}
+.greeting__date {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+}
+.greeting__title {
+  font-family: var(--font-display);
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+.greeting__sub {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: var(--sp-2);
+}
+.greeting__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+}
+
+/* Storage Goals */
+.goal-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.goal-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.goal-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.goal-item__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.goal-item__title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.goal-item__name {
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  color: var(--text-main);
+}
+.goal-item__sub {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+.goal-item__pct {
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  font-family: var(--font-mono);
+  color: var(--text-main);
+}
+.goal-item__track {
+  width: 100%;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.goal-item__fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  transition: width 0.6s var(--spring);
+}
+.goal-item__fill--cyan { background: var(--secondary); }
+.goal-item__fill--amber { background: var(--warning); }
+.goal-item__fill--green { background: var(--success); }
+
+/* Weekly Maintenance Calendar Strip */
+.cal-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: var(--sp-2) 0;
+}
+.cal-strip__day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: var(--sp-2) var(--sp-2);
+  border-radius: var(--r-md);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  background: var(--surface-2);
+  transition: background var(--dur-fast), color var(--dur-fast);
+  flex: 1;
+  text-align: center;
+}
+.cal-strip__day--active {
+  background: var(--primary);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+}
+.cal-strip__day-num {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.cal-strip__day--active .cal-strip__day-num {
+  color: #ffffff;
+}
+
+/* Disk Mini Grid (Projects 2x2 Grid Style) */
+.disk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--sp-3);
+}
+.disk-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  transition: transform var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.disk-tile:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+}
+.disk-tile__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.disk-tile__letter {
+  font-weight: 700;
+  font-size: var(--fs-md);
+  color: var(--text-main);
+}
+.disk-tile__type {
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+}
+.disk-tile__bar {
+  width: 100%;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.disk-tile__bar-fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--primary);
+}
+.disk-tile__bar-fill--warn { background: var(--warning); }
+.disk-tile__bar-fill--danger { background: var(--danger); }
+.disk-tile__stat {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+/* Floating Action Button (FAB) */
+.fab {
+  position: fixed;
+  bottom: 2rem;
+  right: 2.25rem;
+  z-index: 25;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: var(--primary-gradient);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 8px 24px -2px rgba(99, 102, 241, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform var(--dur) var(--spring), box-shadow var(--dur) var(--spring);
+}
+.fab:hover {
+  transform: scale(1.08) translateY(-2px);
+  box-shadow: 0 12px 30px rgba(99, 102, 241, 0.55);
+}
+.fab:active {
+  transform: scale(0.96);
+}
+.fab__icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}

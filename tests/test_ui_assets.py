@@ -313,7 +313,10 @@ def test_every_risk_tier_has_its_own_shape_not_just_its_own_colour() -> None:
 # Contrast, computed rather than claimed
 # ---------------------------------------------------------------------------
 def hex_tokens() -> dict[str, str]:
-    return dict(re.findall(r"--([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})", read(CSS / "tokens.css")))
+    content = read(CSS / "tokens.css")
+    root_match = re.search(r":root\s*\{([^}]+)\}", content)
+    block = root_match.group(1) if root_match else content
+    return dict(re.findall(r"--([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})", block))
 
 
 def as_rgb(value: str) -> tuple[int, int, int]:
@@ -368,8 +371,20 @@ def test_the_dimmest_permitted_text_is_still_readable() -> None:
     going to slip under 4.5:1 it is this one. Named separately from the sweep above
     so a failure says which rule was broken."""
     tokens = hex_tokens()
-
     assert contrast(tokens["text-dim"], tokens["bg-color"]) >= 4.5
+
+
+def test_dark_theme_tokens_clear_contrast_floor() -> None:
+    """Verify dark mode tokens when present also clear their contrast floors."""
+    content = read(CSS / "tokens.css")
+    dark_match = re.search(r'\[data-theme="dark"\]\s*\{([^}]+)\}', content)
+    assert dark_match is not None, "no [data-theme='dark'] in tokens.css"
+    dark_tokens = dict(re.findall(r"--([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})", dark_match.group(1)))
+    bg = dark_tokens.get("bg-color", "#0b0f19")
+    for token, floor in FLOORS.items():
+        if token in dark_tokens:
+            ratio = contrast(dark_tokens[token], bg)
+            assert ratio >= floor, f"Dark theme --{token} is {ratio:.2f}:1, needs {floor}:1"
 
 
 # ---------------------------------------------------------------------------

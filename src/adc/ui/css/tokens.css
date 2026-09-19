@@ -28,37 +28,84 @@
  */
 
 :root {
-  /* v1 palette, preserved verbatim. */
-  --bg-color: #0b0813;
-  --panel-bg: rgba(20, 16, 36, 0.6);
-  --panel-border: rgba(255, 255, 255, 0.08);
-  --primary: #8b5cf6;
-  --primary-glow: rgba(139, 92, 246, 0.4);
-  --secondary: #06b6d4;
-  --secondary-glow: rgba(6, 182, 212, 0.4);
-  --text-main: #f3f4f6;
-  --text-muted: #9ca3af;
-  --danger: #ef4444;
-  --success: #10b981;
-  --success-glow: rgba(16, 185, 129, 0.3);
-  --warning: #f59e0b;
+  /* Modern Soft-SaaS Bento Palette (Light Mode - Default) */
+  --bg-color: #f8f9fc;
+  --panel-bg: #ffffff;
+  --panel-border: rgba(226, 232, 240, 0.85);
+  --primary: #6366f1;
+  --primary-glow: rgba(99, 102, 241, 0.25);
+  --secondary: #0e7490;
+  --secondary-glow: rgba(14, 116, 144, 0.25);
+  --text-main: #111827;
+  --text-muted: #4b5563;
+  --danger: #dc2626;
+  --success: #047857;
+  --success-glow: rgba(4, 120, 87, 0.25);
+  --warning: #b45309;
 
   /* Added in v2. */
-  --primary-text: #a78bfa;      /* small text on the dark ground */
-  --primary-deep: #6d28d9;      /* pressed / active fills */
-  --text-dim: #7c8595;          /* the dimmest text allowed, still 5.42:1 */
-  --danger-text: #fca5a5;       /* 9.1:1, for danger text on dark */
-  --danger-deep: #b91c1c;
-  --surface-1: #120e1e;         /* opaque panel, for anything that must not composite */
-  --surface-2: #191428;
-  --surface-3: #221b35;
-  --hairline: rgba(255, 255, 255, 0.06);
-  --overlay: rgba(6, 4, 12, 0.72);
+  --primary-text: #4f46e5;      /* small text on the light ground */
+  --primary-deep: #4338ca;      /* pressed / active fills */
+  --text-dim: #64748b;          /* the dimmest text allowed, 4.52:1 */
+  --danger-text: #b91c1c;       /* 6.15:1 for danger text */
+  --danger-deep: #991b1b;
+  --surface-1: #ffffff;         /* clean white surface */
+  --surface-2: #f1f4f9;         /* subtle light fill */
+  --surface-3: #e2e8f0;         /* divider / border surface */
+  --hairline: rgba(0, 0, 0, 0.06);
+  --overlay: rgba(15, 23, 42, 0.45);
+
+  /* Modern Bento Design Additions */
+  --surface-card: #ffffff;
+  --border-card: #eaedf3;
+  --border-subtle: #f1f3f7;
+  --primary-light: #eef2ff;
+  --secondary-light: #ecfeff;
+  --accent-purple: #a855f7;
+  --accent-purple-light: #faf5ff;
+  --success-light: #ecfdf5;
+  --warning-light: #fffbeb;
+  --danger-light: #fef2f2;
+  --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --accent-gradient: linear-gradient(135deg, #0891b2 0%, #6366f1 100%);
 }
+
+[data-theme="dark"] {
+  --bg-color: #0b0f19;
+  --panel-bg: rgba(19, 27, 46, 0.95);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --surface-1: #0f172a;
+  --surface-2: #1e293b;
+  --surface-3: #334155;
+  --surface-card: #131b2e;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-dim: #8b95a5;
+  --primary: #818cf8;
+  --primary-text: #a5b4fc;
+  --primary-deep: #6366f1;
+  --secondary: #22d3ee;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --danger-text: #fca5a5;
+  --danger-deep: #b91c1c;
+  --hairline: rgba(255, 255, 255, 0.06);
+  --overlay: rgba(0, 0, 0, 0.72);
+  --border-card: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --primary-light: rgba(99, 102, 241, 0.15);
+  --secondary-light: rgba(34, 211, 238, 0.15);
+  --success-light: rgba(52, 211, 153, 0.15);
+  --warning-light: rgba(251, 191, 36, 0.15);
+  --danger-light: rgba(248, 113, 113, 0.15);
+  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
+  --shadow-float: 0 16px 36px -4px rgba(0, 0, 0, 0.55);
+}
+
 :root {
-  /* Type. Segoe UI Variable Text is what v1 has always actually rendered in --
-     Outfit was never installed on this machine, so the CDN @import cost a request
-     and then fell through to exactly this stack. */
+  /* Type. Segoe UI Variable Display for headlines, Text for UI. */
+  --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
   --font-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
   --font-mono: Consolas, "Cascadia Mono", "Courier New", monospace;
 
@@ -71,7 +118,7 @@
   --fs-2xl: 1.875rem;
   --fs-num: 2.25rem;            /* the one big number on a card */
 
-  /* A 4px scale. Named by step, not by intent, because a gap is a gap. */
+  /* A 4px scale. */
   --sp-1: 0.25rem;
   --sp-2: 0.5rem;
   --sp-3: 0.75rem;
@@ -81,25 +128,30 @@
   --sp-8: 2rem;
   --sp-10: 2.5rem;
 
-  --r-sm: 6px;
-  --r-md: 10px;
-  --r-lg: 14px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-xl: 24px;
+  --r-card: 20px;
   --r-pill: 999px;
 
-  --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.28);
-  --shadow-pop: 0 12px 40px rgba(0, 0, 0, 0.55);
+  --shadow-card: 0 4px 20px -2px rgba(16, 24, 40, 0.05), 0 1px 3px 0 rgba(16, 24, 40, 0.03);
+  --shadow-float: 0 16px 36px -4px rgba(99, 102, 241, 0.12), 0 6px 16px -2px rgba(16, 24, 40, 0.06);
+  --shadow-hover: 0 8px 24px -2px rgba(16, 24, 40, 0.08), 0 2px 6px 0 rgba(16, 24, 40, 0.04);
+  --shadow-panel: var(--shadow-card);
+  --shadow-pop: var(--shadow-float);
   --ring: 0 0 0 2px var(--bg-color), 0 0 0 4px var(--primary-text);
 
-  --sidebar-w: 15.5rem;
-  --content-max: 78rem;
+  --sidebar-w: 16rem;
+  --content-max: 84rem;
   --tap: 2.25rem;               /* smallest interactive box */
 
   --dur-fast: 120ms;
   --dur: 200ms;
   --ease: cubic-bezier(0.2, 0.6, 0.25, 1);
+  --spring: cubic-bezier(0.32, 0.72, 0, 1);
 
-  /* Risk tiers. Paired with an icon and a text label everywhere (SPEC 7.3) -- these
-     are the third channel, never the only one. */
+  /* Risk tiers. Paired with an icon and a text label everywhere (SPEC 7.3) */
   --risk-safe: var(--success);
   --risk-rebuildable: var(--secondary);
   --risk-caution: var(--warning);

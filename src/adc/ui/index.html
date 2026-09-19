@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="vi">
+<html lang="vi" data-theme="light">
 <head>
 <meta charset="utf-8">
 <!--
@@ -196,9 +196,13 @@
 <div class="app">
   <nav class="sidebar" data-i18n-attr="aria-label:nav.label">
     <div class="brand">
-      <svg class="brand__mark" aria-hidden="true"><use href="#icon-brand"/></svg>
-      <span class="brand__name"><b>Disk CleanUp</b></span>
-
+      <div class="brand__avatar">
+        <svg class="brand__mark" aria-hidden="true"><use href="#icon-brand"/></svg>
+      </div>
+      <div class="brand__info">
+        <span class="brand__name"><b>Disk CleanUp</b></span>
+        <span class="brand__status"><span class="brand__dot"></span> Online</span>
+      </div>
     </div>
 
     <ul class="nav" role="list">
@@ -226,6 +230,15 @@
         <span class="nav__badge" id="settings-update-badge" hidden data-i18n="nav.update_badge">Mới</span></button></li>
     </ul>
     <div class="sidebar__foot">
+      <div class="sidebar__promo">
+        <span class="promo__badge">Auto-Shield</span>
+        <p class="promo__title" data-i18n="sidebar.promo_title">Bảo vệ ổ đĩa tự động</p>
+        <p class="promo__desc" data-i18n="sidebar.promo_desc">Lên lịch dọn dẹp định kỳ để máy luôn mượt mà.</p>
+        <button type="button" class="btn btn--sm promo__btn" id="promo-schedule-btn">
+          <span data-i18n="sidebar.promo_btn">+ Lên lịch ngay</span>
+        </button>
+      </div>
+
       <!-- Hidden until admin_state() answers, so an elevated session never sees it
            flash. When it does show, it says how many rows are unavailable rather than
            just "no admin" -- 16 of 49 is the number that makes the button worth
