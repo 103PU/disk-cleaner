@@ -2,7 +2,7 @@
 ; docs/02-SPEC.md 9.2 & docs/03-PLAN.md P7
 
 #ifndef MyAppVersion
-#define MyAppVersion "2.1.0"
+#define MyAppVersion "2.2.0"
 #endif
 #define MyAppName "Disk CleanUp"
 #define MyAppPublisher "Antigravity"

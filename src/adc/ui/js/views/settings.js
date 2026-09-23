@@ -593,7 +593,7 @@
 
     var curLine = ui.el('p', {}, [
       ui.el('span', { i18n: 'settings.updates.current' }),
-      ui.el('span', { class: 'mono', text: 'v' + (updateState.info && updateState.info.current_version ? updateState.info.current_version : '2.1.0') })
+      ui.el('span', { class: 'mono', text: 'v' + (updateState.info && updateState.info.current_version ? updateState.info.current_version : '2.2.0') })
     ]);
     infoBox.appendChild(curLine);
 

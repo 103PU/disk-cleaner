@@ -1,6 +1,6 @@
 [project]
 name = "antigravity-disk-cleaner"
-version = "2.1.0"
+version = "2.2.0"
 description = "Disk CleanUp - Windows disk-space cleaner with a WebView2 desktop UI"
 
 readme = "README.md"

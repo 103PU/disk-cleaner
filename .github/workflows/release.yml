@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag name (e.g. v2.1.0)'
+        description: 'Release tag name (e.g. v2.2.0)'
         required: true
-        default: 'v2.1.0'
+        default: 'v2.2.0'
 
 permissions:
   contents: write
@@ -52,7 +52,7 @@ jobs:
         shell: pwsh
         run: |
           $Tag = if ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME } else { "${{ github.event.inputs.tag }}" }
-          if (-not $Tag) { $Tag = "v2.1.0" }
+          if (-not $Tag) { $Tag = "v2.2.0" }
           $ZipName = "DiskCleanUp-$Tag-windows-x64-portable.zip"
           Compress-Archive -Path "dist/DiskCleanUp" -DestinationPath "dist/$ZipName" -Force
           
@@ -81,9 +81,11 @@ jobs:
             Windows 64-bit disk reclamation utility and multi-volume storage analyzer.
 
             ### ✨ What's New in this Release:
-            - **⏰ Automated Schedule**: Tự động dọn dẹp định kỳ an toàn theo lịch Windows Task Scheduler.
-            - **🚀 In-App Auto Updater**: Tự động kiểm tra bản phát hành mới từ GitHub, hỗ trợ tải trực tiếp và cài đặt nâng cấp ngay trong ứng dụng.
-            - **🛡️ Quality & Performance**: Tối ưu hóa engine quét, vá lỗi typecheck và hoàn thiện giao diện WebView2 mượt mà.
+            - **🎨 Modern Soft-SaaS UI & Bento Grid**: Tái thiết kế toàn bộ Dashboard Overview phong cách Bento Grid hiện đại, tỷ lệ cân đối, hiệu ứng hover mượt mà và nền sáng thanh lịch.
+            - **🧹 Streamlined Clean Dock & Smart Badges**: Thanh tác vụ dọn dẹp dạng floating dock nhỏ gọn, nút bấm tối giản, hệ thống status badge sắc nét, trực quan.
+            - **📁 Project Sweeper Folder Picker**: Tích hợp bộ chọn thư mục native Windows Explorer, gộp nút Quét/Dừng 2 trạng thái với hiệu ứng radar scanning pulse.
+            - **⏰ Automated Schedule & Auto-Updater**: Tự động dọn dẹp định kỳ an toàn theo lịch Windows Task Scheduler và kiểm tra/tải bản cập nhật trực tiếp trong app.
+            - **🛡️ Installer & Engine Reliability**: Cải thiện độ tin cậy của bộ cài Inno Setup, tự động giải phóng process cũ và tối ưu hiệu năng quét.
 
             ### 📥 Download Options (Tải về sử dụng)
 
