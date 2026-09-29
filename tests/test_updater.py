@@ -249,6 +249,13 @@ def test_launch_installer(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> No
             launched = mgr.launch_installer(installer_file)
             assert launched is True
             mock_startfile.assert_called_once_with(str(installer_file))
+
+            # Test silent launch
+            with patch("threading.Thread") as mock_thread:
+                silent_launched = mgr.launch_installer(installer_file, silent=True)
+                assert silent_launched is True
+                mock_popen.assert_called()
+                mock_thread.assert_called()
         else:
             launched = mgr.launch_installer(installer_file)
             assert launched is True

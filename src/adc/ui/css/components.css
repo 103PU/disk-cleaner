@@ -49,9 +49,9 @@
   gap: var(--sp-2);
   min-height: var(--tap);
   padding: var(--sp-2) var(--sp-4);
-  border: 1px solid var(--panel-border);
+  border: 1px solid var(--border-card);
   border-radius: var(--r-sm);
-  background: var(--surface-2);
+  background: var(--surface-card);
   color: var(--text-main);
   font-size: var(--fs-md);
   font-weight: 500;
@@ -63,27 +63,20 @@
 }
 .btn__ico { width: var(--fs-lg); height: var(--fs-lg); }
 
-.btn:hover { background: var(--surface-3); border-color: var(--text-dim); }
-.btn:active { transform: translateY(1px); background: var(--surface-2); }
-/* --primary is a FILL token, measured 4.69:1 on the page but only 3.69:1 under
-   --text-main, so the label on that fill is --bg-color (4.88:1) and the states move
-   the fill's LUMINANCE, not its hue: brighter on hover (7.28:1 dark-on-light), deep on
-   the press with a light label (6.37:1). Every state clears AA, which "just use
-   --primary" would not have. */
-.btn--primary { background: var(--primary); border-color: var(--primary); color: var(--bg-color); font-weight: 600; }
-.btn--primary:hover { background: var(--primary-text); border-color: var(--primary-text); }
-.btn--primary:active { background: var(--primary-deep); border-color: var(--primary-deep); color: var(--text-main); }
+.btn:hover { background: var(--surface-2); border-color: var(--text-dim); }
+.btn:active { transform: translateY(1px); background: var(--surface-3); }
 
-.btn--ghost { background: transparent; border-color: var(--panel-border); }
-.btn--ghost:hover { background: var(--surface-2); border-color: var(--text-dim); }
-.btn--ghost:active { background: var(--surface-3); }
+.btn--primary { background: var(--primary); border-color: var(--primary); color: #ffffff; font-weight: 600; }
+.btn--primary:hover { background: var(--primary-text); border-color: var(--primary-text); color: #ffffff; }
+.btn--primary:active { background: var(--primary-deep); border-color: var(--primary-deep); color: #ffffff; }
 
-/* Same luminance flip, same arithmetic: --danger under --text-main is 3.42:1, so the
-   resting fill is --danger-deep with a light label (5.88:1) and hover brightens to
-   --danger with a dark one (5.27:1). Red is never the text colour of a red button. */
-.btn--danger { background: var(--danger-deep); border-color: var(--danger); color: var(--text-main); font-weight: 600; }
-.btn--danger:hover { background: var(--danger); border-color: var(--danger); color: var(--bg-color); }
-.btn--danger:active { background: var(--danger-deep); color: var(--text-main); }
+.btn--ghost { background: transparent; border-color: var(--border-card); color: var(--text-main); }
+.btn--ghost:hover { background: var(--surface-2); border-color: var(--text-dim); color: var(--text-main); }
+.btn--ghost:active { background: var(--surface-3); color: var(--text-main); }
+
+.btn--danger { background: var(--danger); border-color: var(--danger); color: #ffffff; font-weight: 600; }
+.btn--danger:hover { background: var(--danger-deep); border-color: var(--danger-deep); color: #ffffff; }
+.btn--danger:active { background: var(--danger-deep); color: #ffffff; }
 
 /* No chrome at rest -- this is the toast's close button (ui.js:562) sitting on top of
    another component. It still needs somewhere for the pointer to land, so hover grows
@@ -286,7 +279,7 @@
 /* The visible box and its hit box are the same 20px. The row's real target is the
    label, which ui.js:330 wires to this input with for/id, so the whole name is
    clickable and the checkbox never has to be. */
-.trow__box { width: var(--sp-5); height: var(--sp-5); margin-top: var(--sp-1); accent-color: var(--primary); cursor: pointer; }
+.trow__box { width: 1.15rem; height: 1.15rem; margin-top: var(--sp-1); accent-color: var(--primary); cursor: pointer; }
 .trow__main { display: grid; gap: var(--sp-1); min-width: 0; }
 .trow__name { font-size: var(--fs-base); font-weight: 600; overflow-wrap: anywhere; cursor: pointer; }
 .trow__desc {
@@ -718,11 +711,11 @@
   border: 1px solid var(--border-card);
   border-radius: var(--r-card);
   box-shadow: var(--shadow-card);
-  transform: rotate(0deg) translateY(0);
+  transform: translateY(0);
   transition: transform var(--dur) var(--spring), box-shadow var(--dur) var(--spring), border-color var(--dur) var(--ease);
 }
 .card--tilted:hover {
-  transform: translateY(-4px) rotate(-0.6deg);
+  transform: translateY(-3px);
   box-shadow: var(--shadow-hover);
   border-color: var(--primary-light);
 }
@@ -734,52 +727,28 @@
   gap: var(--sp-5);
   width: 100%;
 }
-.bento-col-7 { grid-column: span 7; }
+.bento-col-8 { grid-column: span 8; }
 .bento-col-6 { grid-column: span 6; }
-.bento-col-5 { grid-column: span 5; }
+.bento-col-4 { grid-column: span 4; }
 
 @media (max-width: 1080px) {
-  .bento-col-7, .bento-col-6, .bento-col-5 {
+  .bento-col-8, .bento-col-6, .bento-col-4 {
     grid-column: span 12;
   }
 }
 
-/* Greeting Section */
-.greeting {
+/* Overview Toolbar */
+.ov__toolbar {
   display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-  margin-bottom: var(--sp-6);
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: var(--sp-5);
 }
-.greeting__date {
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-dim);
-}
-.greeting__title {
-  font-family: var(--font-display);
-  font-size: 1.875rem;
-  font-weight: 700;
-  letter-spacing: -0.025em;
-  color: var(--text-main);
-  line-height: 1.2;
-}
-.greeting__sub {
-  font-size: var(--fs-lg);
-  font-weight: 600;
-  background: var(--accent-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin-bottom: var(--sp-2);
-}
-.greeting__actions {
+.ov__actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-3);
-  margin-top: var(--sp-2);
 }
 
 /* Storage Goals */
@@ -996,5 +965,127 @@
 
 .is-scanning {
   animation: scanRadarPulse 1.8s infinite ease-out;
+}
+
+/* Update Modal (50% Client Size) */
+.update-modal {
+  width: 50vw;
+  min-width: 24rem;
+  max-width: 36rem;
+  background: var(--surface-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-float);
+  padding: var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.update-modal__head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--sp-2);
+}
+.update-modal__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-3);
+  background: var(--primary-light);
+  color: var(--primary-text);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.update-modal__badge-ico {
+  width: var(--fs-sm);
+  height: var(--fs-sm);
+}
+.update-modal__title {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.25;
+}
+.update-modal__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+.update-modal__tag {
+  font-weight: 600;
+}
+.update-modal__size {
+  font-weight: 600;
+}
+.update-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.update-modal__notes {
+  background: var(--surface-2);
+  border: 1px solid var(--border-card);
+  border-radius: var(--r-md);
+  padding: var(--sp-3) var(--sp-4);
+  max-height: 10rem;
+  overflow-y: auto;
+}
+.update-modal__notes-content {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.update-modal__progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  background: var(--surface-2);
+  border-radius: var(--r-md);
+}
+.update-modal__progress-status {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--primary-text);
+  text-align: center;
+}
+.update-modal__error {
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--danger-light);
+  border: 1px solid var(--danger);
+  border-radius: var(--r-sm);
+  color: var(--danger-text);
+  font-size: var(--fs-sm);
+}
+.update-modal__foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding-top: var(--sp-2);
+}
+.update-modal__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+}
+.btn--update-now {
+  width: 100%;
+  max-width: 18rem;
+  min-height: 2.75rem;
+  font-size: var(--fs-base);
+  font-weight: 600;
 }
 

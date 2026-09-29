@@ -231,6 +231,10 @@
         detailErr = null;
         renderDetail();
       }
+      if (selected === null && reports.length > 0) {
+        selected = reports[0].job_id;
+        loadDetail(selected);
+      }
       renderList();
     }, function (err) {
       listErr = err;

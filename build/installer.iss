@@ -2,7 +2,7 @@
 ; docs/02-SPEC.md 9.2 & docs/03-PLAN.md P7
 
 #ifndef MyAppVersion
-#define MyAppVersion "2.2.0"
+#define MyAppVersion "2.3.0"
 #endif
 #define MyAppName "Disk CleanUp"
 #define MyAppPublisher "Antigravity"
@@ -49,7 +49,7 @@ Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall
 
 [Code]
 function NeedsWebView2(): Boolean;

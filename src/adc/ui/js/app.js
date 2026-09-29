@@ -439,11 +439,11 @@
    */
   function checkAppUpdate() {
     api.updaterCheck(false).then(function (res) {
-      if (res && res.available) {
+      if (res && res.available && res.info) {
         if (dom.settingsUpdateBadge) {
           dom.settingsUpdateBadge.hidden = false;
         }
-        ui.toast(i18n.t('update.toast_available'), { kind: 'info' });
+        ui.showUpdateModal(res.info);
       }
     }, function () {
       /* Silent on startup if offline */

@@ -780,6 +780,160 @@
     });
   }
 
+  /* --- update modal ----------------------------------------------------------- */
+
+  function showUpdateModal(info) {
+    if (!info) { return; }
+    if (document.querySelector('.update-modal')) { return; }
+
+    var pollTimer = null;
+    var overlay = el('div', { class: 'overlay' });
+
+    function cleanup() {
+      if (pollTimer) {
+        window.clearTimeout(pollTimer);
+        pollTimer = null;
+      }
+      if (overlay && overlay.parentNode) {
+        overlay.parentNode.removeChild(overlay);
+      }
+    }
+
+    var badge = el('div', { class: 'update-modal__badge' }, [
+      icon('icon-clean', 'update-modal__badge-ico'),
+      el('span', { i18n: 'updater.badge' })
+    ]);
+
+    var title = el('h2', {
+      class: 'update-modal__title',
+      text: i18n.t('updater.title', { version: info.latest_version || '' })
+    });
+
+    var metaTags = [
+      el('span', {
+        class: 'update-modal__tag tag tag--info',
+        text: 'v' + (info.current_version || '2.3.0') + ' → ' + (info.latest_version || '')
+      })
+    ];
+    if (info.asset_size) {
+      metaTags.push(el('span', { class: 'update-modal__size num', text: i18n.fmtBytes(info.asset_size) }));
+    }
+    var meta = el('div', { class: 'update-modal__meta' }, metaTags);
+
+    var notes = null;
+    if (info.release_notes) {
+      notes = el('div', { class: 'update-modal__notes' }, [
+        el('div', { class: 'update-modal__notes-content', text: info.release_notes })
+      ]);
+    }
+
+    var prog = progress();
+    var progStatus = el('div', { class: 'update-modal__progress-status' });
+    var progWrap = el('div', { class: 'update-modal__progress', hidden: true }, [
+      prog,
+      progStatus
+    ]);
+
+    var errBox = el('div', { class: 'update-modal__error', hidden: true });
+
+    var laterBtn = btn({
+      i18n: 'updater.later',
+      variant: 'ghost',
+      on: { click: cleanup }
+    });
+
+    var updateBtn = btn({
+      i18n: 'updater.update_now',
+      variant: 'primary',
+      icon: 'icon-refresh',
+      class: 'btn--gradient btn--update-now',
+      on: { click: startUpdate }
+    });
+
+    var actions = el('div', { class: 'update-modal__actions' }, [
+      updateBtn,
+      laterBtn
+    ]);
+
+    function pollProgress() {
+      ADC.api.updaterDownloadProgress().then(function (res) {
+        if (!res || !res.progress) { return; }
+        var p = res.progress;
+        if (p.status === 'downloading') {
+          var pct = typeof p.pct === 'number' ? Math.round(p.pct) : 0;
+          var bytesDone = i18n.fmtBytes(p.bytes_downloaded);
+          var totalBytes = i18n.fmtBytes(p.total_bytes);
+          var speed = p.speed_bps > 0 ? (' • ' + i18n.fmtBytes(p.speed_bps) + '/s') : '';
+          var label = pct + '% (' + bytesDone + ' / ' + totalBytes + ')' + speed;
+          prog.set(pct, label);
+          progStatus.textContent = i18n.t('updater.downloading');
+          pollTimer = window.setTimeout(pollProgress, 250);
+        } else if (p.status === 'completed') {
+          prog.set(100, '100%');
+          progStatus.textContent = i18n.t('updater.installing_relaunch');
+          ADC.api.updaterInstall(true).then(function () {
+            /* Installer launched silently and will restart the app */
+          }, function (err) {
+            errBox.hidden = false;
+            errBox.textContent = (err && err.text) ? err.text() : String(err && err.message ? err.message : err);
+            actions.hidden = false;
+            updateBtn.disabled = false;
+          });
+        } else if (p.status === 'failed') {
+          errBox.hidden = false;
+          errBox.textContent = p.error || i18n.t('error.unexpected');
+          actions.hidden = false;
+          updateBtn.disabled = false;
+          progWrap.hidden = true;
+        }
+      }, function () {
+        pollTimer = window.setTimeout(pollProgress, 500);
+      });
+    }
+
+    function startUpdate() {
+      updateBtn.disabled = true;
+      laterBtn.hidden = true;
+      errBox.hidden = true;
+      progWrap.hidden = false;
+      prog.set(0, '0%');
+      progStatus.textContent = i18n.t('updater.downloading');
+
+      ADC.api.updaterDownloadStart().then(function () {
+        pollProgress();
+      }, function (err) {
+        errBox.hidden = false;
+        errBox.textContent = (err && err.text) ? err.text() : String(err && err.message ? err.message : err);
+        updateBtn.disabled = false;
+        laterBtn.hidden = false;
+        progWrap.hidden = true;
+      });
+    }
+
+    var dialog = el('div', {
+      class: 'dialog update-modal',
+      role: 'dialog',
+      attrs: { 'aria-modal': 'true' }
+    }, [
+      el('div', { class: 'update-modal__head' }, [
+        badge,
+        title,
+        meta
+      ]),
+      el('div', { class: 'update-modal__body' }, [
+        notes,
+        progWrap,
+        errBox
+      ]),
+      el('div', { class: 'update-modal__foot' }, [
+        actions
+      ])
+    ]);
+
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+  }
+
   /* The bridge-is-gone dialog from index.html. Nothing recovers from this, so it stays
      up: the only fix is restarting the app. */
   function fatal(detail) {
@@ -817,6 +971,7 @@
     toast: toast,
     showError: showError,
     confirm: confirm,
-    fatal: fatal
+    fatal: fatal,
+    showUpdateModal: showUpdateModal
   };
 })();

@@ -27,7 +27,7 @@ from adc.engine import paths
 
 _log = logging.getLogger(__name__)
 
-APP_VERSION: Final = "2.2.0"
+APP_VERSION: Final = "2.3.0"
 
 DEFAULT_REPO: Final = "103PU/disk-cleaner"
 GITHUB_API_LATEST: Final = "https://api.github.com/repos/{repo}/releases/latest"
@@ -449,7 +449,12 @@ class UpdateManager:
                 with contextlib.suppress(OSError):
                     entry.unlink()
 
-    def launch_installer(self, installer_path: Path | str | None = None) -> bool:
+    def launch_installer(
+        self,
+        installer_path: Path | str | None = None,
+        *,
+        silent: bool = False,
+    ) -> bool:
         """Launch the downloaded Windows installer executable."""
         target: Path | None = None
         if installer_path:
@@ -478,9 +483,37 @@ class UpdateManager:
                 "No installer file found to launch.",
             )
 
-        _log.info("updater: launching installer %s", target)
+        _log.info("updater: launching installer %s (silent=%s)", target, silent)
         if sys.platform == "win32":
-            os.startfile(str(target))  # noqa: S606
+            if silent:
+                exe_to_restart = sys.executable if getattr(sys, "frozen", False) else None
+                if exe_to_restart:
+                    comspec = os.environ.get("COMSPEC", "cmd.exe")
+                    flags = "/SILENT /SP- /CLOSEAPPLICATIONS /SUPPRESSMSGBOXES"
+                    cmd_str = f'start /wait "" "{target}" {flags} && start "" "{exe_to_restart}"'
+                    subprocess.Popen(
+                        [comspec, "/c", cmd_str],
+                        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                        close_fds=True,
+                    )
+                else:
+                    subprocess.Popen(
+                        [str(target), "/SILENT", "/SP-", "/CLOSEAPPLICATIONS", "/SUPPRESSMSGBOXES"],
+                        creationflags=getattr(subprocess, "DETACHED_PROCESS", 0),
+                        close_fds=True,
+                    )
+
+                def _exit_app() -> None:
+                    time.sleep(0.8)
+                    os._exit(0)
+
+                threading.Thread(
+                    target=_exit_app,
+                    daemon=True,
+                    name="adc-updater-exit",
+                ).start()
+            else:
+                os.startfile(str(target))  # noqa: S606
         else:
             subprocess.Popen([str(target)])
         return True

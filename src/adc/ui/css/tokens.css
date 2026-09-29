@@ -220,7 +220,7 @@ svg { display: block; flex: none; }
 /* Scrollbars. Thin, and visible enough to find -- v1's were nearly invisible. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+  scrollbar-color: var(--surface-3) transparent;
 }
 
 ::selection { background: var(--primary-deep); color: #fff; }

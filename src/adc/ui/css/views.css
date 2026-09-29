@@ -609,8 +609,8 @@
  */
 .hist {
   display: grid;
-  grid-template-columns: 19rem minmax(0, 1fr);
-  gap: var(--sp-6);
+  grid-template-columns: minmax(21rem, 23rem) minmax(0, 1fr);
+  gap: var(--sp-5);
   align-items: start;
 }
 
@@ -729,10 +729,20 @@
 .hist__item-dur { color: var(--text-muted); font-size: var(--fs-sm); }
 .hist__item-targets { color: var(--text-dim); font-size: var(--fs-xs); }
 
-/* The blocks renderDetail() appends, in its order (history.js:536-542), or one empty state
-   standing in for all of them. A tighter gap than .hist__main's, so the five blocks read
-   as one pane and the run log below reads as a separate object. */
-.hist__detail { display: grid; gap: var(--sp-5); }
+.hist__detail {
+  display: grid;
+  gap: var(--sp-5);
+  background: var(--surface-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-card);
+  padding: var(--sp-5);
+}
+.hist__detail .empty {
+  padding: var(--sp-6) var(--sp-4);
+  max-width: 28rem;
+  margin: var(--sp-4) auto;
+}
 
 /* Range, duration and tags on one line while there is room, wrapping in place at the 26rem
    pane. Baseline rather than centre: the tag pills sit on the title's baseline instead of

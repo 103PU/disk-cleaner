@@ -542,6 +542,9 @@
       updateState.checking = false;
       updateState.checked = true;
       updateState.info = res ? res.info : null;
+      if (res && res.available && res.info) {
+        ui.showUpdateModal(res.info);
+      }
       if (active) { render(); }
     }, function (err) {
       updateState.checking = false;

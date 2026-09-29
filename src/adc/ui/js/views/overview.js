@@ -114,21 +114,6 @@
     });
   }
 
-  /* Formatted uppercase date for the greeting banner, localized for VI and EN. */
-  function getFormattedDate() {
-    var d = new Date();
-    var viDays = ['CHỦ NHẬT', 'THỨ HAI', 'THỨ BA', 'THỨ TƯ', 'THỨ NĂM', 'THỨ SÁU', 'THỨ BẢY'];
-    var enDays = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
-    var enMonths = [
-      'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
-      'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
-    ];
-    if (i18n.lang === 'en') {
-      return enDays[d.getDay()] + ', ' + d.getDate() + ' ' + enMonths[d.getMonth()] + ' ' + d.getFullYear();
-    }
-    return viDays[d.getDay()] + ', ' + d.getDate() + ' THÁNG ' + (d.getMonth() + 1) + ', ' + d.getFullYear();
-  }
-
   /* Weekly maintenance calendar strip matching modern SaaS dashboard. */
   function createCalendarStrip() {
     var today = new Date();
@@ -682,7 +667,7 @@
     dom.results = ui.el('div', { class: 'ov__results', attrs: { 'aria-live': 'polite' } });
 
     var disksCard = ui.card({
-      class: 'bento-col-7 card--tilted',
+      class: 'bento-col-8 card--tilted',
       icon: 'icon-disk',
       i18n: 'overview.disks.title'
     });
@@ -695,7 +680,7 @@
     disksCard.body.appendChild(disksBlock);
 
     var scanCard = ui.card({
-      class: 'bento-col-5 card--tilted',
+      class: 'bento-col-4 card--tilted',
       icon: 'icon-clean',
       i18n: 'overview.scan.title',
       sub: 'overview.scan.sub'
@@ -729,13 +714,8 @@
       dom.last
     ]);
 
-    dom.dateEl = ui.el('div', { class: 'greeting__date', text: getFormattedDate() });
-    var greetingBox = ui.el('div', { class: 'greeting' }, [
-      dom.dateEl,
-      ui.el('h1', { class: 'greeting__title', i18n: 'overview.greeting.title' }),
-      ui.el('p', { class: 'greeting__sub', i18n: 'overview.greeting.sub' }),
-      ui.el('p', { class: 'card__sub', i18n: 'overview.greeting.status' }),
-      ui.el('div', { class: 'greeting__actions' }, [
+    var actionsBar = ui.el('div', { class: 'ov__toolbar' }, [
+      ui.el('div', { class: 'ov__actions' }, [
         ui.btn({
           i18n: 'overview.action.quick_scan', icon: 'icon-search', class: 'btn--pill', variant: 'primary',
           on: { click: startScan }
@@ -763,7 +743,7 @@
     ]);
 
     host.appendChild(ui.el('div', { class: 'ov' }, [
-      greetingBox,
+      actionsBar,
       bento,
       createFab()
     ]));
@@ -814,9 +794,6 @@
        number: '12,3 GB' and '12.3 GB' are different strings. The volume cards also carry a
        gauge aria-label built with i18n.t vars, which is the other thing apply misses. The
        running progress label needs nothing -- the next poll rewrites it within 250 ms. */
-    if (dom && dom.dateEl) {
-      dom.dateEl.textContent = getFormattedDate();
-    }
     if (dom && dom.calContainer) {
       ui.clear(dom.calContainer);
       dom.calContainer.appendChild(createCalendarStrip());
