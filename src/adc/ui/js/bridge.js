@@ -263,6 +263,12 @@
     duplicatesDelete: function (nodeIds) {
       return call('duplicates_delete', nodeIds || []);
     },
+    leftoversFind: function (minAgeDays) {
+      return call('leftovers_find', typeof minAgeDays === 'number' ? minAgeDays : 0);
+    },
+    leftoversDelete: function (nodeIds) {
+      return call('leftovers_delete', nodeIds || []);
+    },
 
     /* The two halves of a clean, and they are separate on purpose: cleanPlan is a dry
        run that mints a token, cleanExecute redeems it. Nothing about *what* gets

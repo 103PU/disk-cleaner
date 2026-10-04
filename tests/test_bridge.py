@@ -1811,3 +1811,60 @@ def test_updater_bridge_endpoints(api: Bridge, monkeypatch: pytest.MonkeyPatch) 
     res_inst = api.updater_install()
     assert res_inst["ok"] is True
     assert res_inst["data"]["launched"] is True
+
+
+def test_leftovers_bridge_endpoints(
+    api: Bridge, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from adc.engine import uninstaller_leftovers
+
+    dummy_item = uninstaller_leftovers.LeftoverItem(
+        node_id="abc123456789",
+        name="OldApp",
+        path=str(tmp_path / "OldApp"),
+        location="Local",
+        size=1024,
+        files=3,
+        mtime=time.time() - 10000,
+        reason_vi="Lý do",
+        reason_en="Reason",
+    )
+    (tmp_path / "OldApp").mkdir()
+    (tmp_path / "OldApp" / "file.txt").write_text("hello", encoding="utf-8")
+
+    dummy_result = uninstaller_leftovers.LeftoversResult(
+        items=[dummy_item], total_bytes=1024, scanned_folders=1, truncated=False
+    )
+    monkeypatch.setattr(
+        uninstaller_leftovers, "find_uninstaller_leftovers", lambda min_age_days=0: dummy_result
+    )
+
+    # find
+    res = api.leftovers_find(0)
+    assert res["ok"] is True
+    assert res["data"]["total_bytes"] == 1024
+    assert len(res["data"]["items"]) == 1
+
+    # delete
+    del_res = api.leftovers_delete(["abc123456789"])
+    assert del_res["ok"] is True
+    assert del_res["data"]["deleted"] == 1
+
+
+def test_sweep_defaults_has_discovered_roots(api: Bridge) -> None:
+    res = api.sweep_defaults()
+    assert res["ok"] is True
+    assert "discovered_roots" in res["data"]
+    assert isinstance(res["data"]["discovered_roots"], list)
+
+
+def test_sweep_start_all(api: Bridge, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from adc.engine import sweeper
+
+    d = tmp_path / "dev"
+    d.mkdir()
+    monkeypatch.setattr(sweeper, "discover_project_roots", lambda: [str(d)])
+
+    res = api.sweep_start(root="ALL", min_age_days=0)
+    assert res["ok"] is True
+    assert res["data"]["root"] == "ALL"

@@ -86,9 +86,221 @@
     return noteRow(iconName, ui.el('span', { text: text }));
   }
 
+  /* --- sub-mode & leftovers state -------------------------------------------- */
+
+  var subMode = 'dev';
+  var leftoversState = {
+    items: [],
+    selectedIds: {},
+    running: false,
+    scanned: false,
+    totalBytes: 0
+  };
+
+  var LEFTOVERS_COLS = [
+    { key: 'check', label: null, sortable: false, numeric: false },
+    { key: 'name', label: 'projects.leftovers.col.name', sortable: false, numeric: false },
+    { key: 'location', label: 'projects.leftovers.col.location', sortable: false, numeric: false },
+    { key: 'size', label: 'projects.leftovers.col.size', sortable: false, numeric: true },
+    { key: 'files', label: 'projects.leftovers.col.files', sortable: false, numeric: true },
+    { key: 'mtime', label: 'projects.leftovers.col.mtime', sortable: false, numeric: true },
+    { key: 'actions', label: 'projects.leftovers.col.actions', sortable: false, numeric: false }
+  ];
+
+  function switchSubMode(mode) {
+    if (subMode === mode) return;
+    subMode = mode;
+    if (dom && dom.tabDev) {
+      if (mode === 'dev') {
+        dom.tabDev.classList.add('is-active');
+        dom.tabLeftovers.classList.remove('is-active');
+        dom.devWrap.hidden = false;
+        dom.leftoversWrap.hidden = true;
+      } else {
+        dom.tabDev.classList.remove('is-active');
+        dom.tabLeftovers.classList.add('is-active');
+        dom.devWrap.hidden = true;
+        dom.leftoversWrap.hidden = false;
+        if (!leftoversState.scanned && !leftoversState.running) {
+          scanLeftovers();
+        }
+      }
+    }
+  }
+
+  function scanLeftovers() {
+    if (leftoversState.running) return;
+    leftoversState.running = true;
+    leftoversState.selectedIds = {};
+    if (dom.leftoversScanBtn) dom.leftoversScanBtn.disabled = true;
+    if (dom.leftoversSummary) dom.leftoversSummary.textContent = i18n.t('projects.leftovers.scanning');
+
+    api.leftoversFind(0).then(function (res) {
+      leftoversState.running = false;
+      leftoversState.scanned = true;
+      leftoversState.items = (res && res.items) || [];
+      leftoversState.totalBytes = (res && res.total_bytes) || 0;
+      if (dom.leftoversScanBtn) dom.leftoversScanBtn.disabled = false;
+      renderLeftovers();
+    }).catch(function (err) {
+      leftoversState.running = false;
+      if (dom.leftoversScanBtn) dom.leftoversScanBtn.disabled = false;
+      ui.showError(err);
+    });
+  }
+
+  function updateLeftoversBar() {
+    if (!dom.leftoversSummary || !dom.leftoversDeleteBtn) return;
+    var totalCount = leftoversState.items.length;
+    var totalSize = leftoversState.totalBytes;
+    var selectedCount = 0;
+    var selectedSize = 0;
+    for (var i = 0; i < leftoversState.items.length; i++) {
+      var item = leftoversState.items[i];
+      if (leftoversState.selectedIds[item.node_id]) {
+        selectedCount++;
+        selectedSize += (item.size || 0);
+      }
+    }
+    if (selectedCount > 0) {
+      dom.leftoversSummary.textContent = i18n.t('projects.leftovers.selected', {
+        count: i18n.fmtInt(selectedCount),
+        size: i18n.fmtBytes(selectedSize)
+      });
+      dom.leftoversDeleteBtn.disabled = false;
+    } else {
+      dom.leftoversSummary.textContent = i18n.t('projects.leftovers.summary', {
+        count: i18n.fmtInt(totalCount),
+        size: i18n.fmtBytes(totalSize)
+      });
+      dom.leftoversDeleteBtn.disabled = true;
+    }
+  }
+
+  function renderLeftovers() {
+    if (!dom.leftoversTbody) return;
+    ui.clear(dom.leftoversTbody);
+    updateLeftoversBar();
+
+    if (!leftoversState.items.length) {
+      dom.leftoversTableWrap.hidden = true;
+      dom.leftoversEmpty.hidden = false;
+      return;
+    }
+
+    dom.leftoversTableWrap.hidden = false;
+    dom.leftoversEmpty.hidden = true;
+
+    for (var i = 0; i < leftoversState.items.length; i++) {
+      var it = leftoversState.items[i];
+      var nid = it.node_id;
+      var chk = ui.el('input', {
+        type: 'checkbox',
+        id: 'ps-lo-chk-' + nid,
+        checked: !!leftoversState.selectedIds[nid],
+        on: {
+          change: (function (id) {
+            return function (e) {
+              if (e.target.checked) leftoversState.selectedIds[id] = true;
+              else delete leftoversState.selectedIds[id];
+              updateLeftoversBar();
+            };
+          })(nid)
+        }
+      });
+
+      var locBadge = ui.el('span', { class: 'ps__badge', text: it.location });
+      var revealBtn = ui.btn({
+        icon: 'icon-explorer',
+        label: 'projects.reveal',
+        variant: 'ghost',
+        size: 'sm',
+        on: {
+          click: (function (id) {
+            return function () {
+              api.exploreReveal(id).then(function () {
+                ui.toast(i18n.t('projects.reveal.done'), { kind: 'success' });
+              }).catch(ui.showError);
+            };
+          })(nid)
+        }
+      });
+
+      var tr = ui.el('tr', { class: 'ps__tr' }, [
+        ui.el('td', { class: 'ps__td ps__td--check' }, [chk]),
+        ui.el('td', { class: 'ps__td ps__td--name' }, [
+          ui.el('label', { attrs: { for: 'ps-lo-chk-' + nid }, text: it.name }),
+          ui.el('span', { class: 'ps__project-path', text: it.path })
+        ]),
+        ui.el('td', { class: 'ps__td' }, [locBadge]),
+        ui.el('td', { class: 'ps__td num' }, [ui.size({ size: it.size })]),
+        ui.el('td', { class: 'ps__td num' }, [document.createTextNode(i18n.fmtInt(it.files))]),
+        ui.el('td', { class: 'ps__td num' }, [
+          ui.el('span', { class: 'ps__idle', text: it.mtime ? i18n.fmtDate(it.mtime) : DASH })
+        ]),
+        ui.el('td', { class: 'ps__td ps__td--act' }, [revealBtn])
+      ]);
+      dom.leftoversTbody.appendChild(tr);
+    }
+  }
+
+  function deleteSelectedLeftovers() {
+    var toDelete = [];
+    var totalSize = 0;
+    for (var i = 0; i < leftoversState.items.length; i++) {
+      var it = leftoversState.items[i];
+      if (leftoversState.selectedIds[it.node_id]) {
+        toDelete.push(it.node_id);
+        totalSize += (it.size || 0);
+      }
+    }
+    if (!toDelete.length) return;
+
+    ui.confirm({
+      title: i18n.t('projects.leftovers.confirm.title'),
+      body: i18n.t('projects.leftovers.confirm.body', {
+        count: i18n.fmtInt(toDelete.length),
+        size: i18n.fmtBytes(totalSize)
+      }),
+      ok: i18n.t('projects.leftovers.confirm.ok')
+    }).then(function (yes) {
+      if (!yes) return;
+      api.leftoversDelete(toDelete).then(function (res) {
+        var count = (res && res.deleted) || toDelete.length;
+        var freed = (res && res.freed) || totalSize;
+        ui.toast(i18n.t('projects.leftovers.deleted', {
+          count: i18n.fmtInt(count),
+          size: i18n.fmtBytes(freed)
+        }), { kind: 'success' });
+        var deletedSet = {};
+        toDelete.forEach(function (id) { deletedSet[id] = true; });
+        leftoversState.items = leftoversState.items.filter(function (it) { return !deletedSet[it.node_id]; });
+        leftoversState.totalBytes = Math.max(0, leftoversState.totalBytes - freed);
+        leftoversState.selectedIds = {};
+        renderLeftovers();
+      }).catch(ui.showError);
+    });
+  }
+
   /* --- lifecycle -------------------------------------------------------------- */
 
   function mount(host) {
+    var tabDev = ui.el('button', {
+      class: 'ps__tab is-active',
+      type: 'button',
+      role: 'tab',
+      i18n: 'projects.tab.dev',
+      on: { click: function () { switchSubMode('dev'); } }
+    });
+    var tabLeftovers = ui.el('button', {
+      class: 'ps__tab',
+      type: 'button',
+      role: 'tab',
+      i18n: 'projects.tab.leftovers',
+      on: { click: function () { switchSubMode('leftovers'); } }
+    });
+    var tabs = ui.el('div', { class: 'ps__tabs', role: 'tablist' }, [tabDev, tabLeftovers]);
+
     var rootInput = ui.el('input', {
       type: 'text', class: 'ps__root', id: 'ps-root',
       attrs: { placeholder: i18n.t('projects.root.hint'), title: i18n.t('projects.root.hint') }
@@ -106,6 +318,17 @@
     var ageBox = ui.el('div', null, [
       ui.field({ i18n: 'projects.age', control: ageWrap, id: 'ps-age' })
     ]);
+
+    var allDrivesBtn = ui.btn({
+      icon: 'icon-disk',
+      i18n: 'projects.all_drives',
+      variant: 'ghost',
+      on: {
+        click: function () {
+          rootInput.value = 'ALL';
+        }
+      }
+    });
 
     var browseBtn = ui.btn({
       icon: 'icon-folder',
@@ -140,6 +363,7 @@
     var controls = ui.el('div', { class: 'ps__controls' }, [
       rootBox,
       ageBox,
+      allDrivesBtn,
       browseBtn,
       scanToggleBtn
     ]);
@@ -201,7 +425,7 @@
 
     logPane = ui.consolePane();
 
-    var body = ui.el('div', { class: 'ps__body' }, [
+    var devWrap = ui.el('div', { class: 'ps__body' }, [
       controls,
       progress,
       totals,
@@ -215,9 +439,70 @@
       logPane
     ]);
 
+    /* --- leftovers UI elements --- */
+    var leftoversSummary = ui.el('span', { class: 'ps__leftovers-summary', i18n: 'projects.leftovers.title' });
+    var leftoversScanBtn = ui.btn({
+      icon: 'icon-search',
+      i18n: 'projects.leftovers.scan',
+      variant: 'primary',
+      on: { click: scanLeftovers }
+    });
+    var leftoversDeleteBtn = ui.btn({
+      icon: 'icon-clean',
+      i18n: 'projects.leftovers.delete',
+      variant: 'danger',
+      disabled: true,
+      on: { click: deleteSelectedLeftovers }
+    });
+    var leftoversBar = ui.el('div', { class: 'ps__leftovers-bar' }, [
+      leftoversSummary,
+      ui.el('div', null, [leftoversScanBtn, leftoversDeleteBtn])
+    ]);
+
+    var loTheadTr = ui.el('tr');
+    for (var lc = 0; lc < LEFTOVERS_COLS.length; lc++) {
+      loTheadTr.appendChild(headCell(LEFTOVERS_COLS[lc]));
+    }
+    var loTbody = ui.el('tbody');
+    var loTable = ui.el('table', { class: 'ps__table' }, [
+      ui.el('caption', { class: 'ps__caption', i18n: 'projects.leftovers.title' }),
+      ui.el('thead', null, [loTheadTr]),
+      loTbody
+    ]);
+    var loTableWrap = ui.el('div', { class: 'ps__table-wrap' }, [loTable]);
+    loTableWrap.hidden = true;
+
+    var loEmpty = ui.el('div', { class: 'ps__table-empty' });
+    loEmpty.appendChild(ui.emptyState({
+      icon: 'icon-search', i18n: 'projects.leftovers.empty', body: 'projects.leftovers.empty.body'
+    }));
+
+    var leftoversWrap = ui.el('div', { class: 'ps__leftovers-wrap' }, [
+      leftoversBar,
+      loTableWrap,
+      loEmpty
+    ]);
+    leftoversWrap.hidden = true;
+
+    var body = ui.el('div', { class: 'ps__body' }, [
+      tabs,
+      devWrap,
+      leftoversWrap
+    ]);
+
     host.appendChild(body);
 
     dom = {
+      tabDev: tabDev,
+      tabLeftovers: tabLeftovers,
+      devWrap: devWrap,
+      leftoversWrap: leftoversWrap,
+      leftoversSummary: leftoversSummary,
+      leftoversScanBtn: leftoversScanBtn,
+      leftoversDeleteBtn: leftoversDeleteBtn,
+      leftoversTbody: loTbody,
+      leftoversTableWrap: loTableWrap,
+      leftoversEmpty: loEmpty,
       root: rootInput,
       age: ageInput,
       browseBtn: browseBtn,
@@ -267,6 +552,9 @@
 
   function relang() {
     renderAll();
+    if (subMode === 'leftovers') {
+      renderLeftovers();
+    }
   }
 
   function finishRun() {

@@ -47,6 +47,7 @@ from adc.engine import (
     schedule,
     sweeper,
     targets,
+    uninstaller_leftovers,
     updater,
     vss,
 )
@@ -325,6 +326,8 @@ def _as_root(raw: object) -> str:
     # Explorer's "Copy as path" quotes what it puts on the clipboard, and pasting
     # that in is the most likely way this box gets filled.
     value = raw.strip().strip('"').strip()
+    if value.upper() == "ALL":
+        return "ALL"
     if not value:
         raise BridgeError("bad_input", "Chưa chọn thư mục gốc.", "No root folder given.")
     if len(value) > MAX_ROOT_LEN:
@@ -1059,6 +1062,62 @@ class Bridge:
             return {"deleted": deleted_count, "freed": freed}
 
     @guarded
+    def leftovers_find(self, min_age_days: object = 0) -> dict[str, Any]:
+        """Find orphaned leftovers of uninstalled applications."""
+        days = (
+            int(min_age_days)
+            if isinstance(min_age_days, int | float) and min_age_days >= 0
+            else 0
+        )
+        res = uninstaller_leftovers.find_uninstaller_leftovers(min_age_days=days)
+        with self._lock:
+            for item in res.items:
+                self._extra_node_paths[item.node_id] = item.path
+        return res.as_dict()
+
+    @guarded
+    def leftovers_delete(self, node_ids: object = None) -> dict[str, Any]:
+        """Move selected uninstalled leftover folders to the Recycle Bin."""
+        if not isinstance(node_ids, list):
+            raise BridgeError("bad_input", "Dữ liệu không hợp lệ.", "Invalid selection.")
+
+        to_recycle: list[str] = []
+        freed = 0
+        with self._lock:
+            for nid in node_ids:
+                if isinstance(nid, str) and nid in self._extra_node_paths:
+                    p = Path(self._extra_node_paths[nid])
+                    if p.is_dir():
+                        to_recycle.append(str(p))
+                        for root, _, files in os.walk(p):
+                            for f in files:
+                                with contextlib.suppress(OSError):
+                                    freed += (Path(root) / f).stat().st_size
+
+        if not to_recycle:
+            return {"deleted": 0, "freed": 0}
+
+        try:
+            op_res = win.recycle_delete(to_recycle)
+            if not op_res.ok and not op_res.aborted:
+                deleted_count = 0
+                for path_str in to_recycle:
+                    with contextlib.suppress(OSError):
+                        import shutil
+                        shutil.rmtree(path_str, ignore_errors=True)
+                        deleted_count += 1
+                return {"deleted": deleted_count, "freed": freed}
+            return {"deleted": len(to_recycle), "freed": freed}
+        except OSError:
+            deleted_count = 0
+            for path_str in to_recycle:
+                with contextlib.suppress(OSError):
+                    import shutil
+                    shutil.rmtree(path_str, ignore_errors=True)
+                    deleted_count += 1
+            return {"deleted": deleted_count, "freed": freed}
+
+    @guarded
     def clean_plan(
         self, selection: object = None, allow_dangerous: object = False
     ) -> dict[str, Any]:
@@ -1139,6 +1198,7 @@ class Bridge:
         """
         return {
             "root": sweeper.default_root(),
+            "discovered_roots": sweeper.discover_project_roots(),
             "min_age_days": sweeper.DEFAULT_MIN_AGE_DAYS,
             "max_min_age_days": sweeper.MAX_MIN_AGE_DAYS,
             "categories": list(sweeper.CATEGORIES),

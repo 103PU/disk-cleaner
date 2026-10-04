@@ -53,6 +53,7 @@ import time
 import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Final
 
 from .audit import get as get_logger
@@ -358,9 +359,18 @@ class SweepRun:
     for a quarter of a second -- which is exactly long enough to tick.
     """
 
-    def __init__(self, job: Job, root: str, *, min_age_days: int, measured_on_disk: bool = True):
+    def __init__(
+        self,
+        job: Job,
+        root: str,
+        *,
+        roots: Sequence[str] | None = None,
+        min_age_days: int,
+        measured_on_disk: bool = True,
+    ):
         self.job = job
         self.root = root
+        self.roots: tuple[str, ...] = tuple(roots) if roots else ((root,) if root != "ALL" else ())
         self.min_age_days = min_age_days
         self.started_at = time.time()
         self._measured_on_disk = measured_on_disk
@@ -526,12 +536,23 @@ class SweepRun:
                 "error": self._error,
             }
 
+    def findings(self) -> list[Finding]:
+        with self._lock:
+            return list(self._rows)
+
     def as_dict(self) -> dict[str, Any]:
         """What ``job_poll`` ships as ``partial_results`` for a sweep job."""
+        if self.root == "ALL":
+            vol = "ALL"
+            name = "ALL"
+        else:
+            vol = volume_letter(self.root)
+            name = os.path.basename(self.root) or self.root
         return {
             "root": self.root,
-            "name": os.path.basename(self.root) or self.root,
-            "volume": volume_letter(self.root),
+            "roots": list(self.roots),
+            "name": name,
+            "volume": vol,
             "rows": self.rows(),
             "totals": self.totals(),
         }
@@ -565,6 +586,9 @@ _ROOT_CANDIDATES: Final[tuple[str, ...]] = (
     "src",
     "repos",
     "git",
+    "workspace",
+    "workspaces",
+    "source\\repos",
 )
 
 
@@ -597,6 +621,41 @@ def default_root() -> str | None:
             if os.path.isdir(candidate):
                 return candidate
     return None
+
+
+def discover_project_roots() -> list[str]:
+    """Find all existing dev project folders across fixed volumes and profile."""
+    found: list[str] = []
+    seen: set[str] = set()
+
+    pinned = os.environ.get("ADC_PROJECT_ROOT", "").strip()
+    if pinned and os.path.isdir(pinned):
+        norm = os.path.normcase(os.path.abspath(pinned))
+        found.append(os.path.abspath(pinned))
+        seen.add(norm)
+
+    system = os.path.normcase(os.environ.get("SYSTEMDRIVE", "C:") + os.sep)
+    try:
+        volumes = [v.root for v in fixed_volumes()]
+    except OSError:
+        volumes = []
+
+    ordered = [v for v in volumes if os.path.normcase(v) != system]
+    ordered += [v for v in volumes if os.path.normcase(v) == system]
+    profile = os.environ.get("USERPROFILE", "")
+    bases = [*ordered, profile] if profile else ordered
+
+    for base in bases:
+        if not base or not os.path.isdir(base):
+            continue
+        for name in _ROOT_CANDIDATES:
+            cand = os.path.join(base, name)
+            norm = os.path.normcase(os.path.abspath(cand))
+            if norm not in seen and os.path.isdir(cand):
+                seen.add(norm)
+                found.append(os.path.abspath(cand))
+
+    return found
 
 
 def clamp_min_age_days(raw: object, *, default: int = DEFAULT_MIN_AGE_DAYS) -> int:
@@ -715,7 +774,9 @@ def _find_candidates(
     inside it would take longer than deleting it.
     """
     out: list[_Candidate] = []
-    stack: list[tuple[str, int, str | None]] = [(run.root, 0, None)]
+    roots = run.roots if run.roots else (run.root,)
+    stack: list[tuple[str, int, str | None]] = [(r, 0, None) for r in roots]
+    root_set = set(roots)
     while stack:
         cancel.raise_if_cancelled()
         if deadline is not None and time.monotonic() >= deadline:
@@ -726,7 +787,7 @@ def _find_candidates(
             scanner = os.scandir(current)
         except OSError as exc:
             detail = exc.strerror or exc
-            if current == run.root:
+            if current in root_set and len(root_set) == 1:
                 run.fail(f"{current}: {detail}")
             else:
                 run.note_denied(f"{current}: {detail}")
@@ -995,13 +1056,27 @@ def submit_sweep(
     ``not_present``.
     """
     active = settings or Settings()
+    str_root = os.fspath(root)
+    if str_root.upper() == "ALL":
+        roots = tuple(discover_project_roots())
+        resolved = "ALL"
+    else:
+        resolved = resolve_root(str_root)
+        roots = (resolved,)
     run = SweepRun(
         new_job(),
-        resolve_root(root),
+        resolved,
+        roots=roots,
         min_age_days=max(0, min(MAX_MIN_AGE_DAYS, min_age_days)),
         measured_on_disk=active.size_on_disk,
     )
-    _log.info("sweep %s: root=%s days=%d", run.job.id, run.root, run.min_age_days)
+    _log.info(
+        "sweep %s: root=%s days=%d roots=%d",
+        run.job.id,
+        run.root,
+        run.min_age_days,
+        len(run.roots),
+    )
     runner.submit(run.job, lambda _job: run_sweep(run, settings=active))
     return run
 
@@ -1212,8 +1287,8 @@ def sweep_plan_store() -> SweepPlanStore:
     return _store
 
 
-def _guard_for(root: str, settings: Settings) -> Guard:
-    r"""One guard for the whole plan, rooted at the swept directory.
+def _guard_for(root: str, settings: Settings, roots: Sequence[str] | None = None) -> Guard:
+    r"""One guard for the whole plan, rooted at the swept directory (or directories).
 
     The root is the *sweep* root rather than each finding, which is the stronger
     statement: every path the deleter touches has to resolve inside the tree the
@@ -1225,10 +1300,29 @@ def _guard_for(root: str, settings: Settings) -> Guard:
     the intended answer: the sweeper has no business in a system directory even if
     it managed to find a ``node_modules`` inside one.
     """
+    if root.upper() == "ALL" or (roots and len(roots) > 1):
+        raw_roots = tuple(roots) if roots else tuple(discover_project_roots())
+        valid_roots: list[str] = []
+        for r in raw_roots:
+            try:
+                Guard(roots=(r,), exclusions=settings.exclusions)
+                valid_roots.append(r)
+            except GuardError:
+                continue
+        if not valid_roots:
+            profile = os.environ.get("USERPROFILE") or os.path.expanduser("~")
+            fallback = os.path.join(profile, "Projects")
+            Path(fallback).mkdir(parents=True, exist_ok=True)
+            return Guard(roots=(fallback,), exclusions=settings.exclusions)
+        return Guard(roots=tuple(valid_roots), exclusions=settings.exclusions)
     return Guard(roots=(root,), exclusions=settings.exclusions)
 
 
-def guard_for_root(root: str, settings: Settings | None = None) -> Guard:
+def guard_for_root(
+    root: str,
+    settings: Settings | None = None,
+    roots: Sequence[str] | None = None,
+) -> Guard:
     """The guard a delete under *root* would be checked against, built early.
 
     Public because the bridge wants it *before* the walk. A root that can be
@@ -1238,7 +1332,7 @@ def guard_for_root(root: str, settings: Settings | None = None) -> Guard:
     screen. One definition, so the answer given at the door and the answer given
     at confirm time cannot differ.
     """
-    return _guard_for(root, settings if settings is not None else load_settings())
+    return _guard_for(root, settings if settings is not None else load_settings(), roots=roots)
 
 
 def _item_from(finding: Finding, *, skipped_reason: str | None = None) -> SweepItem:
@@ -1358,7 +1452,7 @@ def plan_delete(
     """
     active = settings if settings is not None else load_settings()
     target = store if store is not None else sweep_plan_store()
-    guard = _guard_for(run.root, active)
+    guard = _guard_for(run.root, active, roots=run.roots)
     strategy = HardDelete()
     cancel = CancelToken(budget_s)
     requested: Sequence[object]

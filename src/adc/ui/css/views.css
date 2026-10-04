@@ -1862,6 +1862,73 @@
 
 .ps__idle { color: var(--text-muted); font-size: var(--fs-xs); }
 
+/* --- Projects sub-modes: Dev Sweeper & App Leftovers ---------------------------- */
+.ps__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  border-bottom: 1px solid var(--hairline);
+  padding-bottom: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+.ps__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: calc(var(--tap) - var(--sp-2));
+  padding: var(--sp-1) var(--sp-3);
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease),
+              border-color var(--dur-fast) var(--ease),
+              color var(--dur-fast) var(--ease);
+}
+.ps__tab:hover {
+  background: var(--surface-2);
+  color: var(--text-main);
+}
+.ps__tab.is-active {
+  background: var(--surface-2);
+  border-color: var(--primary);
+  color: var(--primary-text);
+  font-weight: 600;
+}
+.ps__leftovers-wrap {
+  display: grid;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+.ps__leftovers-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+}
+.ps__leftovers-summary {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+.ps__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
 /* --- view: schedule (Automated Maintenance) --------------------------------- */
 
 .sched {

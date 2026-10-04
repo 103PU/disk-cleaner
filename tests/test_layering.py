@@ -127,7 +127,10 @@ def test_engine_imports_are_stdlib_or_sibling(repo_root: Path) -> None:
 
 @pytest.mark.parametrize(
     "module",
-    ["fsutil", "guard", "jobs", "paths", "report", "volumes", "schedule", "updater"],
+    [
+        "fsutil", "guard", "jobs", "paths", "report",
+        "volumes", "schedule", "updater", "uninstaller_leftovers",
+    ],
 )
 def test_engine_module_imports_without_a_gui_stack(module: str) -> None:
     """Each module imports on its own, in this plain process. No WebView2 here."""
