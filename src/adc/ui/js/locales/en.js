@@ -598,4 +598,5 @@ window.ADC.locales.en = {
   'vss.unsupported': 'Shadow copies are not available here',
   'vss.unsupported.body': 'This build could not reach the Volume Shadow Copy service, so it will not guess at what is stored. Nothing on this screen can run.',
   'vss.used': 'Used',
+  'theme.toggle': 'Toggle Light / Dark theme',
 };

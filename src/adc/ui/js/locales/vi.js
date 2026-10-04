@@ -598,4 +598,5 @@ window.ADC.locales.vi = {
   'vss.unsupported': 'Máy này không dùng được shadow copy',
   'vss.unsupported.body': 'Bản này không liên lạc được với dịch vụ Volume Shadow Copy nên sẽ không đoán xem đang lưu những gì. Không có gì trên màn hình này chạy được.',
   'vss.used': 'Đang dùng',
+  'theme.toggle': 'Chuyển đổi giao diện Sáng / Tối',
 };

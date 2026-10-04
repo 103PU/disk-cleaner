@@ -256,12 +256,22 @@
    * title/subText and never through an i18n key.
    */
   function diskCard(vol) {
+    var used = pctUsed(vol);
     var c = ui.card({
       icon: 'icon-disk',
       title: vol.display_name || vol.root || vol.letter || '',
       subText: vol.filesystem || ''
     });
-    ui.append(c.body, [
+    var dGauge = ui.donutGauge({
+      pct: used,
+      label: vol.letter || '',
+      ariaLabel: i18n.t('overview.disk.gauge', {
+        pct: i18n.fmtPct(used),
+        free: i18n.fmtBytes(vol.free),
+        total: i18n.fmtBytes(vol.total)
+      })
+    });
+    var infoCol = ui.el('div', { class: 'ov__disk-info' }, [
       gauge(vol),
       ui.el('div', { class: 'ov__disk-figs' }, [
         ui.stat({ value: i18n.fmtBytes(vol.free), i18n: 'overview.disk.free' }),
@@ -270,10 +280,11 @@
           metaRow('overview.disk.used', i18n.fmtBytes(vol.used)),
           metaRow('overview.disk.free_pct', i18n.fmtPct(vol.free_pct))
         ])
-      ]),
-      /* Strictly false, not falsy. An is_ntfs the engine did not report is unknown, and
-         telling the user size-on-disk cannot be measured on a volume nobody checked is a
-         guess dressed up as a warning. */
+      ])
+    ]);
+    var row = ui.el('div', { class: 'ov__disk-row' }, [dGauge, infoCol]);
+    ui.append(c.body, [
+      row,
       vol.is_ntfs === false
         ? ui.el('div', { class: 'ov__disk-tags' }, [
           ui.tag({ tone: 'warn', icon: 'icon-caution', i18n: 'overview.disk.not_ntfs' })
@@ -339,6 +350,7 @@
        needs it live again. */
     dom.stop.disabled = false;
     dom.progress.hidden = !on;
+    if (dom.radar) { dom.radar.hidden = !on; }
   }
 
   function startScan() {
@@ -679,6 +691,8 @@
     ]);
     disksCard.body.appendChild(disksBlock);
 
+    dom.radar = ui.el('span', { class: 'radar-pulse' });
+    dom.radar.hidden = true;
     var scanCard = ui.card({
       class: 'bento-col-4 card--tilted',
       icon: 'icon-clean',
@@ -686,7 +700,7 @@
       sub: 'overview.scan.sub'
     });
     ui.append(scanCard.body, [
-      ui.el('div', { class: 'ov__scan-actions' }, [dom.start, dom.stop]),
+      ui.el('div', { class: 'ov__scan-actions' }, [dom.start, dom.stop, dom.radar]),
       dom.progress,
       dom.results
     ]);

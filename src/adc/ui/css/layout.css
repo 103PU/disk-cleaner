@@ -371,11 +371,51 @@
 /* Each view appends its own buttons here and app.js:237 clears them on every switch,
    so the count is never known from here. No flex-shrink override for that reason: the
    row has to be squeezable before wrap can save it from overflowing the header. */
+.topbar__right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-left: auto;
+}
+
 .topbar__actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--sp-2);
+}
+
+.theme-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap);
+  height: var(--tap);
+  padding: 0;
+  border: 1px solid var(--border-card);
+  border-radius: var(--r-sm);
+  background: var(--surface-card);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease),
+              border-color var(--dur-fast) var(--ease),
+              color var(--dur-fast) var(--ease),
+              transform var(--dur-fast) var(--ease);
+}
+
+.theme-btn:hover {
+  background: var(--surface-2);
+  border-color: var(--text-dim);
+}
+
+.theme-btn:active {
+  transform: translateY(1px);
+  background: var(--surface-3);
+}
+
+.theme-btn__ico {
+  width: var(--fs-lg);
+  height: var(--fs-lg);
 }
 
 @keyframes viewFadeIn {

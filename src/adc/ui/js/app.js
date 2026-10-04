@@ -80,6 +80,7 @@
     dom.adminOk = byId('admin-ok');
     dom.adminCount = byId('admin-count');
     dom.adminRelaunch = byId('admin-relaunch');
+    dom.themeToggle = byId('theme-toggle');
     dom.settingsUpdateBadge = byId('settings-update-badge');
     dom.sections = {};
     for (var i = 0; i < ROUTES.length; i += 1) {
@@ -416,6 +417,10 @@
       });
     }
 
+    if (dom.themeToggle) {
+      dom.themeToggle.addEventListener('click', toggleTheme);
+    }
+
     /* One listener for the whole app: i18n has already re-applied every [data-i18n] in
        the document by the time this runs, so what is left is the chrome this file
        writes itself and whatever the visible view drew from engine data. */
@@ -424,6 +429,19 @@
       markAdmin();
       relangCurrent();
     });
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    try {
+      window.localStorage.setItem('adc_theme', theme);
+    } catch (e) {}
+  }
+
+  function toggleTheme() {
+    var current = document.documentElement.getAttribute('data-theme') || 'light';
+    var next = current === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
   }
   /*
    * What happens once the bridge answers, in order and with the failure of each step
@@ -465,6 +483,12 @@
   }
 
   function boot() {
+    var savedTheme = 'light';
+    try {
+      savedTheme = window.localStorage.getItem('adc_theme') || 'light';
+    } catch (e) {}
+    applyTheme(savedTheme);
+
     cacheDom();
     wire();
     markNav(FIRST);

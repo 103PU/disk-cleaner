@@ -177,6 +177,11 @@
           stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
     <path d="M12 2.5 20 12l-8 9.5L4 12l8-9.5z"/><path d="M12 8.5 15.5 12 12 15.5 8.5 12 12 8.5z"/>
   </symbol>
+  <symbol id="icon-theme" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+    <path d="M19 3v4M21 5h-4"/>
+  </symbol>
 </svg>
 <!--
   The shell. Everything below the sidebar is empty on purpose: each view builds its
@@ -276,7 +281,12 @@
       </div>
       <!-- Views drop their own action buttons here (Quét lại, Huỷ, …) instead of each
            painting a header of its own. -->
-      <div class="topbar__actions" id="topbar-actions"></div>
+      <div class="topbar__right">
+        <div class="topbar__actions" id="topbar-actions"></div>
+        <button type="button" class="theme-btn" id="theme-toggle" data-i18n-attr="aria-label:theme.toggle,title:theme.toggle">
+          <svg class="theme-btn__ico" aria-hidden="true"><use href="#icon-theme"/></svg>
+        </button>
+      </div>
     </header>
 
     <section class="view" id="view-overview" role="region" aria-labelledby="view-title" hidden></section>

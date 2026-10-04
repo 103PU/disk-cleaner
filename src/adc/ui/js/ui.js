@@ -373,6 +373,70 @@
     };
     return node.set(0, '');
   }
+
+  function donutGauge(opts) {
+    var o = opts || {};
+    var pct = typeof o.pct === 'number' ? Math.max(0, Math.min(100, o.pct)) : 0;
+    var tone = o.tone || (pct >= 90 ? 'danger' : (pct >= 75 ? 'warn' : 'normal'));
+    var r = 40;
+    var circ = 2 * Math.PI * r;
+    var offset = circ * (1 - pct / 100);
+
+    var svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('class', 'donut-gauge__svg');
+    svg.setAttribute('viewBox', '0 0 100 100');
+    svg.setAttribute('aria-hidden', 'true');
+
+    var track = document.createElementNS(SVG_NS, 'circle');
+    track.setAttribute('class', 'donut-gauge__track');
+    track.setAttribute('cx', '50');
+    track.setAttribute('cy', '50');
+    track.setAttribute('r', String(r));
+
+    var fillCls = 'donut-gauge__fill';
+    if (tone === 'danger') { fillCls += ' donut-gauge__fill--danger'; }
+    else if (tone === 'warn') { fillCls += ' donut-gauge__fill--warn'; }
+
+    var fill = document.createElementNS(SVG_NS, 'circle');
+    fill.setAttribute('class', fillCls);
+    fill.setAttribute('cx', '50');
+    fill.setAttribute('cy', '50');
+    fill.setAttribute('r', String(r));
+    fill.setAttribute('stroke-dasharray', String(circ.toFixed(2)));
+    fill.style.strokeDashoffset = String(offset.toFixed(2));
+
+    svg.appendChild(track);
+    svg.appendChild(fill);
+
+    var center = el('div', { class: 'donut-gauge__center' }, [
+      el('span', { class: 'donut-gauge__pct num', text: Math.round(pct) + '%' }),
+      o.label ? el('span', { class: 'donut-gauge__label', text: o.label }) : null
+    ]);
+
+    var node = el('div', {
+      class: 'donut-gauge',
+      role: 'img',
+      attrs: { 'aria-label': o.ariaLabel || (pct + '%') }
+    }, [svg, center]);
+
+    node.set = function (newPct, newTone, newLabel) {
+      var p = typeof newPct === 'number' ? Math.max(0, Math.min(100, newPct)) : 0;
+      var t = newTone || (p >= 90 ? 'danger' : (p >= 75 ? 'warn' : 'normal'));
+      var off = circ * (1 - p / 100);
+      var cls = 'donut-gauge__fill';
+      if (t === 'danger') { cls += ' donut-gauge__fill--danger'; }
+      else if (t === 'warn') { cls += ' donut-gauge__fill--warn'; }
+      fill.setAttribute('class', cls);
+      fill.style.strokeDashoffset = String(off.toFixed(2));
+      var pctSpan = center.querySelector('.donut-gauge__pct');
+      if (pctSpan) { pctSpan.textContent = Math.round(p) + '%'; }
+      var lblSpan = center.querySelector('.donut-gauge__label');
+      if (lblSpan && newLabel) { lblSpan.textContent = newLabel; }
+      return node;
+    };
+
+    return node;
+  }
   /* --- console ----------------------------------------------------------------- */
 
   /* Event levels, from jobs.py:38-42. */
@@ -964,6 +1028,7 @@
     size: size,
     targetRow: targetRow,
     progress: progress,
+    donutGauge: donutGauge,
     consolePane: consolePane,
     emptyState: emptyState,
     comingSoon: comingSoon,

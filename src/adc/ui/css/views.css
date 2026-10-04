@@ -66,6 +66,20 @@
   gap: var(--sp-4);
 }
 
+.ov__disk-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.ov__disk-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
 /* The free figure beside the three numbers it is derived from, and above them once the
    card is too narrow to hold both -- the card width here is a function of how many volumes
    the machine has, so the arrangement follows it instead of a media query. start, because
@@ -140,6 +154,22 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-3);
+}
+
+@keyframes adc-radar-sweep {
+  0% { transform: scale(0.95); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: scale(1.15); opacity: 0; }
+}
+
+.radar-pulse {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--r-pill);
+  background: var(--primary);
+  box-shadow: 0 0 10px var(--primary);
+  animation: adc-radar-sweep 1.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
 }
 
 /* The polite live region (overview.js:568): cleared when a run starts and filled once when
