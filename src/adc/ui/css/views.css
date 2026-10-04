@@ -1550,6 +1550,135 @@
 }
 .dx__note-ico { width: var(--fs-md); height: var(--fs-md); color: var(--text-dim); }
 
+/* --- Explorer sub-modes: Large Files & Duplicates -------------------------------- */
+.dx__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  border-bottom: 1px solid var(--hairline);
+  padding-bottom: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+.dx__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: calc(var(--tap) - var(--sp-2));
+  padding: var(--sp-1) var(--sp-3);
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease),
+              border-color var(--dur-fast) var(--ease),
+              color var(--dur-fast) var(--ease);
+}
+.dx__tab:hover {
+  background: var(--surface-2);
+  color: var(--text-main);
+}
+.dx__tab.is-active {
+  background: var(--surface-2);
+  border-color: var(--primary);
+  color: var(--primary-text);
+  font-weight: 600;
+}
+.dx__sub-body {
+  display: grid;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+.dx__sub-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+}
+.dx__sub-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.dx__sub-select {
+  min-height: calc(var(--tap) - var(--sp-2));
+  padding: var(--sp-1) var(--sp-3);
+  background: var(--surface-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--r-sm);
+  color: var(--text-main);
+  font-size: var(--fs-sm);
+}
+.dx__sub-select:hover {
+  border-color: var(--text-dim);
+}
+.dx__sub-summary {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-main);
+}
+.dx__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  background: var(--surface-2);
+  color: var(--text-main);
+  border: 1px solid var(--hairline);
+}
+.dx__dupe-group {
+  display: grid;
+  gap: var(--sp-2);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-md);
+  background: var(--surface-card);
+  padding: var(--sp-3);
+}
+.dx__dupe-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--hairline);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--primary-text);
+}
+.dx__dupe-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2);
+  border-radius: var(--r-sm);
+  transition: background-color var(--dur-fast) var(--ease);
+}
+.dx__dupe-row:hover {
+  background: var(--surface-1);
+}
+.dx__dupe-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  gap: var(--sp-1);
+}
+.dx__dupe-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-3);
+  padding-top: var(--sp-2);
+}
+
 /* --- Shadow copies ------------------------------------------------------------- */
 
 /* The eighth view, and the only one with no sidebar entry: it is reached from the Clean

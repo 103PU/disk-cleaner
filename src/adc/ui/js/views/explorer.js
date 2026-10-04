@@ -155,9 +155,41 @@
   var sortAsc = false;
   var filterText = '';
 
+  var activeTab = 'tree';
+  var selectedVol = null;
+
+  var largeState = {
+    running: false,
+    files: [],
+    totalSize: 0,
+    minMb: 100,
+    cat: 'all',
+    scannedVol: null
+  };
+
+  var dupesState = {
+    running: false,
+    groups: [],
+    totalWasted: 0,
+    totalFiles: 0,
+    minKb: 1024,
+    selectedIds: {},
+    scannedVol: null
+  };
+
   /* --- the walk --------------------------------------------------------------- */
 
-  function openVolume(letter) { start(letter, null); }
+  function openVolume(letter) {
+    selectedVol = letter;
+    renderVols();
+    if (activeTab === 'tree') {
+      start(letter, null);
+    } else if (activeTab === 'large') {
+      scanLargeFiles(letter);
+    } else if (activeTab === 'dupes') {
+      scanDuplicates(letter);
+    }
+  }
 
   function openNode(nodeId) { if (nodeId) { start(null, nodeId); } }
 
@@ -200,6 +232,7 @@
         parent_id: started.parent_id,
         crumbs: started.crumbs || []
       };
+      selectedVol = started.volume;
       /* A new level is a new list; carrying the old filter over would hide rows the
          user never filtered. Sort order is a preference and does carry over. */
       filterText = '';
@@ -354,7 +387,7 @@
     var node = ui.el('button', {
       class: 'dx__vol',
       type: 'button',
-      disabled: running,
+      disabled: running || largeState.running || dupesState.running,
       on: { click: function () { openVolume(letter); } }
     }, [
       ui.icon('icon-disk', 'dx__vol-ico'),
@@ -374,7 +407,8 @@
     ]);
     /* The drive whose tree is on screen. aria-current says it out loud, because a
        tinted border is not information. */
-    if (head && head.volume === letter) {
+    var activeLetter = (head && head.volume) || selectedVol || (vols && vols[0] && vols[0].letter);
+    if (activeLetter === letter) {
       node.classList.add('is-active');
       node.setAttribute('aria-current', 'true');
     }
@@ -980,14 +1014,324 @@
   function renderAll() {
     if (!dom) { return; }
     renderVols();
-    renderCrumbs();
-    renderPath();
-    renderTotals();
-    renderMap();
-    renderTable();
-    renderNotes();
-    dom.body.hidden = !head;
-    dom.empty.hidden = !!head;
+    if (activeTab === 'tree') {
+      renderCrumbs();
+      renderPath();
+      renderTotals();
+      renderMap();
+      renderTable();
+      renderNotes();
+      dom.body.hidden = !head;
+      dom.empty.hidden = !!head;
+      var hasWalk = !!(head && head.node_id);
+      dom.reload.disabled = running || !hasWalk;
+      dom.revealHere.disabled = !hasWalk;
+    } else if (activeTab === 'large') {
+      renderLargeFiles();
+    } else if (activeTab === 'dupes') {
+      renderDuplicates();
+    }
+  }
+
+  /* --- Large Files Hunter (Phase 2) ------------------------------------------- */
+
+  function currentVolume() {
+    if (selectedVol) { return selectedVol; }
+    if (head && head.volume) { return head.volume; }
+    if (vols && vols.length) { return vols[0].letter; }
+    return 'C';
+  }
+
+  function categoryLabel(cat) {
+    if (cat === 'media') { return i18n.t('explorer.large.cat_media'); }
+    if (cat === 'archive') { return i18n.t('explorer.large.cat_archive'); }
+    if (cat === 'installer') { return i18n.t('explorer.large.cat_installer'); }
+    if (cat === 'document') { return i18n.t('explorer.large.cat_document'); }
+    return i18n.t('explorer.large.cat_other');
+  }
+
+  function scanLargeFiles(vol) {
+    var targetVol = vol || currentVolume();
+    selectedVol = targetVol;
+    largeState.running = true;
+    largeState.scannedVol = targetVol;
+    if (dom.largeBtn) { dom.largeBtn.disabled = true; }
+    ui.clear(dom.largeTableBody);
+    ui.clear(dom.largeTableEmpty);
+    dom.largeTableWrap.hidden = true;
+    dom.largeSummary.textContent = '';
+    dom.largeTableEmpty.appendChild(ui.emptyState({
+      icon: 'icon-search',
+      i18n: 'explorer.large.scanning'
+    }));
+
+    api.largeFilesFind(targetVol, largeState.minMb, 100).then(function (res) {
+      largeState.running = false;
+      if (dom.largeBtn) { dom.largeBtn.disabled = false; }
+      largeState.files = (res && res.files) || [];
+      largeState.totalSize = (res && res.total_bytes) || 0;
+      renderLargeFiles();
+    }, function (err) {
+      largeState.running = false;
+      if (dom.largeBtn) { dom.largeBtn.disabled = false; }
+      ui.clear(dom.largeTableEmpty);
+      dom.largeTableEmpty.appendChild(ui.emptyState({
+        icon: 'icon-caution',
+        text: errText(err)
+      }));
+    });
+  }
+
+  function renderLargeFiles() {
+    if (!dom || !dom.largeTableBody) { return; }
+    ui.clear(dom.largeTableBody);
+    ui.clear(dom.largeTableEmpty);
+
+    var filtered = largeState.files.filter(function (f) {
+      if (largeState.cat === 'all') { return true; }
+      return f.category === largeState.cat;
+    });
+
+    if (!filtered.length) {
+      dom.largeTableWrap.hidden = true;
+      dom.largeSummary.textContent = '';
+      dom.largeTableEmpty.appendChild(ui.emptyState({
+        icon: 'icon-disk',
+        i18n: 'explorer.large.empty'
+      }));
+      return;
+    }
+
+    var totalBytes = filtered.reduce(function (sum, f) { return sum + nz(f.size); }, 0);
+    dom.largeSummary.textContent = i18n.t('explorer.large.summary', {
+      count: i18n.fmtInt(filtered.length),
+      total: i18n.fmtBytes(totalBytes),
+      volume: currentVolume()
+    });
+
+    dom.largeTableWrap.hidden = false;
+    for (var i = 0; i < filtered.length; i += 1) {
+      var f = filtered[i];
+      var nid = f.node_id;
+      var tr = ui.el('tr', { class: 'dx__tr' }, [
+        ui.el('td', { class: 'dx__td dx__td--name' }, [
+          ui.el('div', { class: 'dx__vol-body' }, [
+            ui.el('span', { class: 'dx__name', text: f.name }),
+            ui.el('span', { class: 'dx__vol-meta mono', text: f.path })
+          ])
+        ]),
+        ui.el('td', { class: 'dx__td' }, [
+          ui.el('span', { class: 'dx__badge', text: categoryLabel(f.category) })
+        ]),
+        ui.el('td', { class: 'dx__td num', text: i18n.fmtBytes(f.size) }),
+        ui.el('td', { class: 'dx__td num', text: i18n.fmtDate(f.mtime) }),
+        ui.el('td', { class: 'dx__td dx__td--act' }, [
+          ui.btn({
+            icon: 'icon-explorer',
+            label: 'explorer.row.reveal',
+            variant: 'ghost',
+            size: 'sm',
+            on: { click: (function (id) { return function () { reveal(id); }; })(nid) }
+          })
+        ])
+      ]);
+      dom.largeTableBody.appendChild(tr);
+    }
+  }
+
+  /* --- Smart Duplicate Finder (Phase 2) --------------------------------------- */
+
+  function scanDuplicates(vol) {
+    var targetVol = vol || currentVolume();
+    selectedVol = targetVol;
+    dupesState.running = true;
+    dupesState.scannedVol = targetVol;
+    if (dom.dupesBtn) { dom.dupesBtn.disabled = true; }
+    ui.clear(dom.dupesList);
+    ui.clear(dom.dupesEmpty);
+    dom.dupesActions.hidden = true;
+    dom.dupesEmpty.appendChild(ui.emptyState({
+      icon: 'icon-search',
+      i18n: 'explorer.dupes.scanning'
+    }));
+
+    api.duplicatesFind(targetVol, dupesState.minKb, 50).then(function (res) {
+      dupesState.running = false;
+      if (dom.dupesBtn) { dom.dupesBtn.disabled = false; }
+      dupesState.groups = (res && res.groups) || [];
+      dupesState.totalWasted = (res && res.total_wasted_bytes) || 0;
+      dupesState.totalFiles = (res && res.total_duplicate_files) || 0;
+      dupesState.selectedIds = {};
+      for (var g = 0; g < dupesState.groups.length; g += 1) {
+        var items = dupesState.groups[g].items || [];
+        for (var it = 0; it < items.length; it += 1) {
+          if (!items[it].suggested_keep) {
+            dupesState.selectedIds[items[it].node_id] = true;
+          }
+        }
+      }
+      renderDuplicates();
+    }, function (err) {
+      dupesState.running = false;
+      if (dom.dupesBtn) { dom.dupesBtn.disabled = false; }
+      ui.clear(dom.dupesEmpty);
+      dom.dupesEmpty.appendChild(ui.emptyState({
+        icon: 'icon-caution',
+        text: errText(err)
+      }));
+    });
+  }
+
+  function updateDupesActionBar() {
+    if (!dom || !dom.dupesDeleteBtn) { return; }
+    var count = 0;
+    for (var k in dupesState.selectedIds) {
+      if (dupesState.selectedIds[k]) { count += 1; }
+    }
+    dom.dupesDeleteBtn.disabled = count === 0;
+    dom.dupesDeleteBtn.textContent = i18n.t('explorer.dupes.delete_btn', {
+      count: i18n.fmtInt(count)
+    });
+  }
+
+  function renderDuplicates() {
+    if (!dom || !dom.dupesList) { return; }
+    ui.clear(dom.dupesList);
+    ui.clear(dom.dupesEmpty);
+
+    if (!dupesState.groups.length) {
+      dom.dupesActions.hidden = true;
+      dom.dupesEmpty.appendChild(ui.emptyState({
+        icon: 'icon-disk',
+        i18n: 'explorer.dupes.empty'
+      }));
+      return;
+    }
+
+    dom.dupesActions.hidden = false;
+    dom.dupesSummary.textContent = i18n.t('explorer.dupes.summary', {
+      groups: i18n.fmtInt(dupesState.groups.length),
+      files: i18n.fmtInt(dupesState.totalFiles),
+      wasted: i18n.fmtBytes(dupesState.totalWasted)
+    });
+    updateDupesActionBar();
+
+    for (var i = 0; i < dupesState.groups.length; i += 1) {
+      var grp = dupesState.groups[i];
+      var card = ui.el('div', { class: 'dx__dupe-group' }, [
+        ui.el('div', {
+          class: 'dx__dupe-header num',
+          text: i18n.t('explorer.dupes.group_head', {
+            idx: i18n.fmtInt(i + 1),
+            size: i18n.fmtBytes(grp.file_size),
+            wasted: i18n.fmtBytes(grp.wasted_bytes)
+          })
+        })
+      ]);
+
+      var items = grp.items || [];
+      for (var j = 0; j < items.length; j += 1) {
+        var item = items[j];
+        var nid = item.node_id;
+        var isKeep = !!item.suggested_keep;
+        var chk = ui.el('input', {
+          type: 'checkbox',
+          checked: !isKeep && !!dupesState.selectedIds[nid],
+          disabled: isKeep,
+          on: {
+            change: (function (id) {
+              return function (ev) {
+                dupesState.selectedIds[id] = ev.target.checked;
+                updateDupesActionBar();
+              };
+            })(nid)
+          }
+        });
+
+        var rowChildren = [
+          chk,
+          ui.el('div', { class: 'dx__dupe-meta' }, [
+            ui.el('span', { class: 'dx__name mono', text: item.path }),
+            ui.el('span', { class: 'dx__vol-meta num', text: i18n.fmtDate(item.mtime) })
+          ])
+        ];
+
+        if (isKeep) {
+          rowChildren.push(ui.el('span', {
+            class: 'dx__badge',
+            text: i18n.t('explorer.dupes.keep_badge')
+          }));
+        }
+
+        rowChildren.push(ui.btn({
+          icon: 'icon-explorer',
+          label: 'explorer.row.reveal',
+          variant: 'ghost',
+          size: 'sm',
+          on: { click: (function (id) { return function () { reveal(id); }; })(nid) }
+        }));
+
+        card.appendChild(ui.el('div', { class: 'dx__dupe-row' }, rowChildren));
+      }
+      dom.dupesList.appendChild(card);
+    }
+  }
+
+  function deleteSelectedDupes() {
+    var toDelete = [];
+    for (var k in dupesState.selectedIds) {
+      if (dupesState.selectedIds[k]) { toDelete.push(k); }
+    }
+    if (!toDelete.length) { return; }
+
+    ui.confirm({
+      danger: true,
+      i18n: 'explorer.dupes.confirm_title',
+      body: 'explorer.dupes.confirm_body',
+      confirmKey: 'action.confirm'
+    }).then(function (ok) {
+      if (!ok) { return; }
+      api.duplicatesDelete(toDelete).then(function (res) {
+        ui.toast(i18n.t('explorer.dupes.deleted_ok', {
+          count: i18n.fmtInt((res && res.deleted) || 0),
+          freed: i18n.fmtBytes((res && res.freed) || 0)
+        }), { kind: 'success' });
+        scanDuplicates(currentVolume());
+      }, function (err) { ui.showError(err); });
+    });
+  }
+
+  /* --- Sub-mode Tab Switcher -------------------------------------------------- */
+
+  function switchTab(tab) {
+    activeTab = tab;
+    if (!dom) { return; }
+    dom.tabTree.classList.toggle('is-active', tab === 'tree');
+    dom.tabTree.setAttribute('aria-selected', tab === 'tree' ? 'true' : 'false');
+    dom.tabLarge.classList.toggle('is-active', tab === 'large');
+    dom.tabLarge.setAttribute('aria-selected', tab === 'large' ? 'true' : 'false');
+    dom.tabDupes.classList.toggle('is-active', tab === 'dupes');
+    dom.tabDupes.setAttribute('aria-selected', tab === 'dupes' ? 'true' : 'false');
+
+    var isTree = tab === 'tree';
+    var isLarge = tab === 'large';
+    var isDupes = tab === 'dupes';
+
+    dom.crumbs.hidden = !isTree;
+    dom.path.hidden = !isTree;
+    dom.progress.hidden = !isTree || !running;
+    dom.body.hidden = !isTree || !head;
+    dom.empty.hidden = !isTree || !!head;
+
+    dom.largeWrap.hidden = !isLarge;
+    dom.dupesWrap.hidden = !isDupes;
+
+    var vol = currentVolume();
+    if (isLarge && !largeState.scannedVol) {
+      scanLargeFiles(vol);
+    } else if (isDupes && !dupesState.scannedVol) {
+      scanDuplicates(vol);
+    }
   }
 
   /* --- lifecycle -------------------------------------------------------------- */
@@ -1022,6 +1366,29 @@
       icon: 'icon-explorer', i18n: 'explorer.level', sub: 'explorer.level.sub',
       actions: [reload, revealHere, stop]
     });
+
+    var tabTree = ui.el('button', {
+      class: 'dx__tab is-active',
+      type: 'button',
+      role: 'tab',
+      i18n: 'explorer.tab.tree',
+      on: { click: function () { switchTab('tree'); } }
+    });
+    var tabLarge = ui.el('button', {
+      class: 'dx__tab',
+      type: 'button',
+      role: 'tab',
+      i18n: 'explorer.tab.large',
+      on: { click: function () { switchTab('large'); } }
+    });
+    var tabDupes = ui.el('button', {
+      class: 'dx__tab',
+      type: 'button',
+      role: 'tab',
+      i18n: 'explorer.tab.dupes',
+      on: { click: function () { switchTab('dupes'); } }
+    });
+    var tabs = ui.el('div', { class: 'dx__tabs', role: 'tablist' }, [tabTree, tabLarge, tabDupes]);
 
     var crumbs = ui.el('nav', {
       class: 'dx__crumbs', i18nAttr: 'aria-label:explorer.crumbs'
@@ -1071,13 +1438,165 @@
     var empty = ui.emptyState({
       icon: 'icon-explorer', i18n: 'explorer.empty', body: 'explorer.empty.body'
     });
-    ui.append(panel.body, [crumbs, path, progress, body, empty]);
+
+    /* Large Files Wrap */
+    var largeHint = noteRow('icon-info', ui.el('span', { i18n: 'explorer.large.hint' }));
+
+    var largeMinSelect = ui.el('select', {
+      class: 'dx__sub-select',
+      on: {
+        change: function (ev) {
+          largeState.minMb = parseInt(ev.target.value, 10) || 100;
+          scanLargeFiles();
+        }
+      }
+    }, [
+      ui.el('option', { value: '100', text: '≥ 100 MB' }),
+      ui.el('option', { value: '500', text: '≥ 500 MB' }),
+      ui.el('option', { value: '1024', text: '≥ 1 GB' }),
+      ui.el('option', { value: '2048', text: '≥ 2 GB' }),
+      ui.el('option', { value: '5120', text: '≥ 5 GB' })
+    ]);
+
+    var largeCatSelect = ui.el('select', {
+      class: 'dx__sub-select',
+      on: {
+        change: function (ev) {
+          largeState.cat = ev.target.value;
+          renderLargeFiles();
+        }
+      }
+    }, [
+      ui.el('option', { value: 'all', i18n: 'explorer.large.cat_all' }),
+      ui.el('option', { value: 'media', i18n: 'explorer.large.cat_media' }),
+      ui.el('option', { value: 'archive', i18n: 'explorer.large.cat_archive' }),
+      ui.el('option', { value: 'installer', i18n: 'explorer.large.cat_installer' }),
+      ui.el('option', { value: 'document', i18n: 'explorer.large.cat_document' }),
+      ui.el('option', { value: 'other', i18n: 'explorer.large.cat_other' })
+    ]);
+
+    var largeBtn = ui.btn({
+      icon: 'icon-search',
+      i18n: 'explorer.large.scan',
+      variant: 'primary',
+      size: 'sm',
+      on: { click: function () { scanLargeFiles(); } }
+    });
+
+    var largeBar = ui.el('div', { class: 'dx__sub-bar' }, [
+      ui.el('div', { class: 'dx__sub-tools' }, [
+        ui.el('span', { i18n: 'explorer.large.min_size' }),
+        largeMinSelect,
+        ui.el('span', { i18n: 'explorer.large.cat' }),
+        largeCatSelect
+      ]),
+      largeBtn
+    ]);
+
+    var largeSummary = ui.el('div', { class: 'dx__sub-summary num' });
+
+    var largeThead = ui.el('thead', null, [
+      ui.el('tr', { class: 'dx__tr' }, [
+        ui.el('th', { class: 'dx__th', i18n: 'explorer.large.col_file' }),
+        ui.el('th', { class: 'dx__th', i18n: 'explorer.large.col_cat' }),
+        ui.el('th', { class: 'dx__th dx__th--num', i18n: 'explorer.large.col_size' }),
+        ui.el('th', { class: 'dx__th dx__th--num', i18n: 'explorer.large.col_mtime' }),
+        ui.el('th', { class: 'dx__th', i18n: 'explorer.large.col_actions' })
+      ])
+    ]);
+    var largeTbody = ui.el('tbody', null, null);
+    var largeTableWrap = ui.el('div', { class: 'dx__table-wrap' }, [
+      ui.el('table', { class: 'dx__table' }, [
+        ui.el('caption', { class: 'dx__caption', i18n: 'explorer.tab.large' }),
+        largeThead,
+        largeTbody
+      ])
+    ]);
+    largeTableWrap.hidden = true;
+    var largeTableEmpty = ui.el('div', { class: 'dx__table-empty' });
+
+    var largeWrap = ui.el('div', { class: 'dx__sub-body' }, [
+      largeHint,
+      largeBar,
+      largeSummary,
+      largeTableWrap,
+      largeTableEmpty
+    ]);
+    largeWrap.hidden = true;
+
+    /* Duplicates Wrap */
+    var dupesHint = noteRow('icon-info', ui.el('span', { i18n: 'explorer.dupes.hint' }));
+
+    var dupesMinSelect = ui.el('select', {
+      class: 'dx__sub-select',
+      on: {
+        change: function (ev) {
+          dupesState.minKb = parseInt(ev.target.value, 10) || 1024;
+          scanDuplicates();
+        }
+      }
+    }, [
+      ui.el('option', { value: '1024', text: '≥ 1 MB' }),
+      ui.el('option', { value: '10240', text: '≥ 10 MB' }),
+      ui.el('option', { value: '51200', text: '≥ 50 MB' }),
+      ui.el('option', { value: '102400', text: '≥ 100 MB' }),
+      ui.el('option', { value: '512000', text: '≥ 500 MB' })
+    ]);
+
+    var dupesBtn = ui.btn({
+      icon: 'icon-search',
+      i18n: 'explorer.dupes.scan',
+      variant: 'primary',
+      size: 'sm',
+      on: { click: function () { scanDuplicates(); } }
+    });
+
+    var dupesBar = ui.el('div', { class: 'dx__sub-bar' }, [
+      ui.el('div', { class: 'dx__sub-tools' }, [
+        ui.el('span', { i18n: 'explorer.dupes.min_size' }),
+        dupesMinSelect
+      ]),
+      dupesBtn
+    ]);
+
+    var dupesSummary = ui.el('div', { class: 'dx__sub-summary num' });
+    var dupesDeleteBtn = ui.btn({
+      icon: 'icon-clean',
+      label: 'explorer.dupes.delete_btn',
+      variant: 'danger',
+      size: 'sm',
+      disabled: true,
+      on: { click: deleteSelectedDupes }
+    });
+    var dupesActions = ui.el('div', { class: 'dx__dupe-actions' }, [
+      dupesSummary,
+      dupesDeleteBtn
+    ]);
+    dupesActions.hidden = true;
+
+    var dupesList = ui.el('div', { class: 'dx__sub-body' });
+    var dupesEmpty = ui.el('div', { class: 'dx__table-empty' });
+
+    var dupesWrap = ui.el('div', { class: 'dx__sub-body' }, [
+      dupesHint,
+      dupesBar,
+      dupesActions,
+      dupesList,
+      dupesEmpty
+    ]);
+    dupesWrap.hidden = true;
+
+    ui.append(panel.body, [tabs, crumbs, path, progress, body, empty, largeWrap, dupesWrap]);
 
     host.appendChild(pick);
     host.appendChild(panel);
 
     dom = {
       vols: volsBox,
+      tabs: tabs,
+      tabTree: tabTree,
+      tabLarge: tabLarge,
+      tabDupes: tabDupes,
       crumbs: crumbs,
       path: path,
       progress: progress,
@@ -1094,7 +1613,20 @@
       tableEmpty: tableEmpty,
       notes: notes,
       body: body,
-      empty: empty
+      empty: empty,
+      largeWrap: largeWrap,
+      largeBtn: largeBtn,
+      largeSummary: largeSummary,
+      largeTableWrap: largeTableWrap,
+      largeTableBody: largeTbody,
+      largeTableEmpty: largeTableEmpty,
+      dupesWrap: dupesWrap,
+      dupesBtn: dupesBtn,
+      dupesActions: dupesActions,
+      dupesSummary: dupesSummary,
+      dupesDeleteBtn: dupesDeleteBtn,
+      dupesList: dupesList,
+      dupesEmpty: dupesEmpty
     };
   }
 

@@ -27,6 +27,7 @@ be a second place for the wording to drift.
 
 from __future__ import annotations
 
+import contextlib
 import functools
 import os
 import sys
@@ -37,7 +38,9 @@ from typing import Any, Final, ParamSpec
 
 from adc.engine import (
     audit,
+    duplicates,
     explorer,
+    large_files,
     paths,
     report,
     scanner,
@@ -433,6 +436,7 @@ class Bridge:
         # meaningful while the table it came from is still the one on screen.
         self._sweeps: dict[str, sweeper.SweepRun] = {}
         self._sweep_plans: dict[str, sweeper.SweepPlan] = {}
+        self._extra_node_paths: dict[str, str] = {}
 
     # -- internals ---------------------------------------------------------
     @property
@@ -533,6 +537,8 @@ class Bridge:
         was already shown.
         """
         with self._lock:
+            if node_id in self._extra_node_paths:
+                return self._extra_node_paths[node_id]
             levels = list(self._explores.values())
         for level in reversed(levels):
             found = level.path_for(node_id)
@@ -946,6 +952,111 @@ class Bridge:
         _open_folder(folder)
         _log.info("bridge explore_reveal: opened=%s", folder)
         return {"node_id": node_id, "opened": str(folder)}
+
+    @guarded
+    def large_files_find(
+        self,
+        volume_id: object = None,
+        min_size_mb: object = 100,
+        limit: object = 100,
+    ) -> dict[str, Any]:
+        """Find the largest files on a volume or directory root."""
+        root: str | None = None
+        if isinstance(volume_id, str) and volume_id.strip():
+            stripped = volume_id.strip()
+            if os.path.isdir(stripped):
+                root = os.path.abspath(stripped)
+            else:
+                letter = stripped.rstrip(":\\/").upper()
+                if len(letter) == 1 and "A" <= letter <= "Z":
+                    root = f"{letter}:\\"
+
+        if root is None or not os.path.exists(root):
+            raise BridgeError(
+                "bad_input",
+                "Cần chỉ định ổ đĩa hoặc thư mục hợp lệ.",
+                "A valid volume or directory root is required.",
+            )
+
+        mb = int(min_size_mb) if isinstance(min_size_mb, int | float) and min_size_mb >= 0 else 100
+        cap = int(limit) if isinstance(limit, int | float) and limit > 0 else 100
+        res = large_files.find_large_files(root, min_size_bytes=mb * 1024 * 1024, limit=cap)
+        with self._lock:
+            for f in res.files:
+                self._extra_node_paths[f.node_id] = f.path
+        return res.as_dict()
+
+    @guarded
+    def duplicates_find(
+        self,
+        volume_id: object = None,
+        min_size_kb: object = 1024,
+        limit: object = 50,
+    ) -> dict[str, Any]:
+        """Find duplicate files on a volume or directory root."""
+        root: str | None = None
+        if isinstance(volume_id, str) and volume_id.strip():
+            stripped = volume_id.strip()
+            if os.path.isdir(stripped):
+                root = os.path.abspath(stripped)
+            else:
+                letter = stripped.rstrip(":\\/").upper()
+                if len(letter) == 1 and "A" <= letter <= "Z":
+                    root = f"{letter}:\\"
+
+        if root is None or not os.path.exists(root):
+            raise BridgeError(
+                "bad_input",
+                "Cần chỉ định ổ đĩa hoặc thư mục hợp lệ.",
+                "A valid volume or directory root is required.",
+            )
+
+        kb = int(min_size_kb) if isinstance(min_size_kb, int | float) and min_size_kb >= 0 else 1024
+        cap = int(limit) if isinstance(limit, int | float) and limit > 0 else 50
+        res = duplicates.find_duplicates(root, min_size_bytes=kb * 1024, limit_groups=cap)
+        with self._lock:
+            for g in res.groups:
+                for it in g.items:
+                    self._extra_node_paths[it.node_id] = it.path
+        return res.as_dict()
+
+    @guarded
+    def duplicates_delete(self, node_ids: object = None) -> dict[str, Any]:
+        """Move selected duplicate items to the Recycle Bin."""
+        if not isinstance(node_ids, list):
+            raise BridgeError("bad_input", "Dữ liệu không hợp lệ.", "Invalid selection.")
+
+        to_recycle: list[str] = []
+        freed = 0
+        with self._lock:
+            for nid in node_ids:
+                if isinstance(nid, str) and nid in self._extra_node_paths:
+                    p = Path(self._extra_node_paths[nid])
+                    if p.is_file():
+                        to_recycle.append(str(p))
+                        with contextlib.suppress(OSError):
+                            freed += p.stat().st_size
+
+        if not to_recycle:
+            return {"deleted": 0, "freed": 0}
+
+        try:
+            op_res = win.recycle_delete(to_recycle)
+            if not op_res.ok and not op_res.aborted:
+                deleted_count = 0
+                for path_str in to_recycle:
+                    with contextlib.suppress(OSError):
+                        os.remove(path_str)
+                        deleted_count += 1
+                return {"deleted": deleted_count, "freed": freed}
+            return {"deleted": len(to_recycle), "freed": freed}
+        except OSError:
+            deleted_count = 0
+            for path_str in to_recycle:
+                with contextlib.suppress(OSError):
+                    os.remove(path_str)
+                    deleted_count += 1
+            return {"deleted": deleted_count, "freed": freed}
 
     @guarded
     def clean_plan(

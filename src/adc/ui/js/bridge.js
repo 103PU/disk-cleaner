@@ -254,6 +254,15 @@
       return call('explore_start', volumeId || null, nodeId || null);
     },
     exploreReveal: function (nodeId) { return call('explore_reveal', nodeId); },
+    largeFilesFind: function (volumeId, minSizeMb, limit) {
+      return call('large_files_find', volumeId || null, minSizeMb || 100, limit || 100);
+    },
+    duplicatesFind: function (volumeId, minSizeKb, limit) {
+      return call('duplicates_find', volumeId || null, minSizeKb || 1024, limit || 50);
+    },
+    duplicatesDelete: function (nodeIds) {
+      return call('duplicates_delete', nodeIds || []);
+    },
 
     /* The two halves of a clean, and they are separate on purpose: cleanPlan is a dry
        run that mints a token, cleanExecute redeems it. Nothing about *what* gets
